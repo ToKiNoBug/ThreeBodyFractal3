@@ -1,0 +1,15 @@
+project(ThreeBodyFractal3_libthreebody LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.5)
+
+set(CMAKE_CXX_STANDARD 17)
+
+#find_package(Eigen3 REQUIRED)
+#find_package(OpenMP REQUIRED)
+
+add_library(threebody STATIC 
+    libthreebody.h 
+    libthreebody.cpp)
+
+add_executable(test_libthreebody test_tb.cpp)
+
+target_link_libraries(test_libthreebody PRIVATE threebody)
