@@ -8,20 +8,26 @@ find_package(OpenMP REQUIRED)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
 
 find_package(PNG REQUIRED)
-find_package(fractal_utils 1.0.3 COMPONENTS core_utils png_utils REQUIRED)
+
+list(APPEND CMAKE_PREFIX_PATH "/media/jeremiah/D/Git/build-ThreeBodyFractal3-linux/3rdParty/FractalUtils/install")
+
+find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils REQUIRED)
+
+find_package(LibLZMA REQUIRED)
 
 add_library(threebodyfractal STATIC
     threebodyfractal.h
     threebodyfractal.cpp)
 
-include_directories(${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody)
+include_directories(${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody ${LIBLZMA_INCLUDE_DIRS})
 
 set(tbf_dependents
     threebody
     PNG::PNG
     fractal_utils::core_utils
     fractal_utils::png_utils
-    OpenMP::OpenMP_CXX)
+    OpenMP::OpenMP_CXX
+    LibLZMA::LibLZMA)
 
 target_link_libraries(threebodyfractal PUBLIC
 

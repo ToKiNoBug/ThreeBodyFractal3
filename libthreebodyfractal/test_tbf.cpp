@@ -1,6 +1,7 @@
 #include <fractal_utils/core_utils.h>
 #include <fractal_utils/png_utils.h>
 #include <omp.h>
+#include <stdlib.h>
 
 #include <cstring>
 #include <memory>
@@ -64,14 +65,27 @@ int main() {
         1 - map_result.at<result_t>(i).end_time / opt.time_end;
   }
 
-  color_u8c3_many((float*)buffer.data, color_series::jet,
-                  buffer.element_count(), (pixel_RGB*)img_u8c3.data);
+  color_u8c3_many((float *)buffer.data, color_series::jet,
+                  buffer.element_count(), (pixel_RGB *)img_u8c3.data);
 
-  const bool ok = write_png("test.png", color_space::u8c3, img_u8c3);
+  bool ok = write_png("test.png", color_space::u8c3, img_u8c3);
 
   if (!ok) {
     printf("Failed to write image.\n");
     return 1;
+  }
+  {
+    const size_t buffer_bytes = map_result.byte_count() * 2.5;
+    void *const buffer = aligned_alloc(32, map_result.byte_count() * 2.5);
+
+    ok = libthreebody::save_fractal_bin_file("test.tbf", input, wind, opt,
+                                             map_result, buffer, buffer_bytes);
+    free(buffer);
+
+    if (!ok) {
+      printf("Failed to save fractal bin file.\n");
+      return 1;
+    }
   }
 
   return 0;

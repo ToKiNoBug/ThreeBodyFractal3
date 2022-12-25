@@ -2,7 +2,9 @@
 
 # list(APPEND CMAKE_PREFIX_PATH "D:/Git/build-FractalUtils-win/install")
 
-find_package(fractal_utils 1.0.3 COMPONENTS core_utils png_utils)
+set(version_fu 1.0.7)
+
+find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils)
 
 if(${fractal_utils_FOUND})
     message(STATUS "fractal_utils found.")
@@ -19,7 +21,7 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils/.git)
         COMMAND_ERROR_IS_FATAL ANY)
 endif()
 
-execute_process(COMMAND git checkout v1.0.3
+execute_process(COMMAND git checkout "v${version_fu}"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils
     COMMAND_ERROR_IS_FATAL ANY OUTPUT_QUIET)
 
@@ -59,7 +61,7 @@ set(CFP_temp CMAKE_PREFIX_PATH)
 
 list(APPEND CMAKE_PREFIX_PATH ${fu_install_dir})
 
-find_package(fractal_utils 1.0.3 COMPONENTS core_utils png_utils)
+find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils)
 
 if(NOT ${fractal_utils_FOUND})
     set(CMAKE_PREFIX_PATH ${CFP_temp})
