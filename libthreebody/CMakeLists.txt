@@ -12,6 +12,10 @@ add_library(threebody STATIC
 
 target_compile_options(threebody PUBLIC -mavx -mavx2 -mfma)
 
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+target_compile_options(threebody PRIVATE -Ofast)
+endif()
+
 add_executable(test_libthreebody test_tb.cpp)
 
 target_link_libraries(test_libthreebody PRIVATE threebody)
