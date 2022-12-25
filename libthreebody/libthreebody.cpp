@@ -31,7 +31,6 @@ void libthreebody::compute_acclerate(const Eigen::Array33d &x,
 
   for (int i = 0; i < 3; i++) {
     for (int j = i + 1; j < 3; j++) {
-      /*
       Eigen::Array3d xj_sub_xi;
 
       double temp = 0;
@@ -40,23 +39,23 @@ void libthreebody::compute_acclerate(const Eigen::Array33d &x,
         xj_sub_xi[r] = x(r, j) - x(r, i);
         temp += xj_sub_xi[r] * xj_sub_xi[r];
       }
-      */
 
-      auto xj_sub_xi = x.col(j) - x.col(i);
-      const double distanceSquare = xj_sub_xi.square().sum();
+      // auto xj_sub_xi = x.col(j) - x.col(i);
+      const double distanceSquare = temp;
       const double distance = std::sqrt(distanceSquare);
-      /*
+
       for (int r = 0; r < 3; r++) {
-        xj_sub_xi *= G / (distanceSquare * distance);
+        xj_sub_xi[r] *= G / (distanceSquare * distance);
         dv->operator()(r, i) += mass(j) * xj_sub_xi(r);
         dv->operator()(r, j) -= mass(i) * xj_sub_xi(r);
       }
-      */
 
+      /*
       auto G_mult_diffXji_div_dist_pow_5_2 =
           G * xj_sub_xi / (distanceSquare * distance);
       dv->col(i) += mass(j) * G_mult_diffXji_div_dist_pow_5_2;
       dv->col(j) -= mass(i) * G_mult_diffXji_div_dist_pow_5_2;
+      */
     }
   }
 }
@@ -68,7 +67,6 @@ void libthreebody::compute_potential_acclerate(
   double pot = 0;
   for (int i = 0; i < 3; i++) {
     for (int j = i + 1; j < 3; j++) {
-      /*
       Eigen::Array3d xj_sub_xi;
 
       double temp = 0;
@@ -83,12 +81,11 @@ void libthreebody::compute_potential_acclerate(
       const double distance = std::sqrt(distanceSquare);
 
       for (int r = 0; r < 3; r++) {
-        xj_sub_xi *= G / (distanceSquare * distance);
+        xj_sub_xi[r] *= G / (distanceSquare * distance);
         acclerate->operator()(r, i) += mass(j) * xj_sub_xi(r);
         acclerate->operator()(r, j) -= mass(i) * xj_sub_xi(r);
       }
-      */
-
+      /*
       auto xj_sub_xi = position.col(j) - position.col(i);
       const double distanceSquare = xj_sub_xi.square().sum();
       const double distance = std::sqrt(distanceSquare);
@@ -98,6 +95,7 @@ void libthreebody::compute_potential_acclerate(
 
       acclerate->col(i) += mass(j) * G_mult_diffXji_div_dist_pow_5_2;
       acclerate->col(j) -= mass(i) * G_mult_diffXji_div_dist_pow_5_2;
+      */
 
       pot -= G * mass(i) * mass(j) / distance;
     }

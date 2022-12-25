@@ -64,7 +64,7 @@ int main() {
         1 - map_result.at<result_t>(i).end_time / opt.time_end;
   }
 
-  color_u8c3_many((float*)buffer.data, color_series::bone,
+  color_u8c3_many((float*)buffer.data, color_series::jet,
                   buffer.element_count(), (pixel_RGB*)img_u8c3.data);
 
   const bool ok = write_png("test.png", color_space::u8c3, img_u8c3);
