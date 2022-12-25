@@ -16,8 +16,11 @@ if(NOT DEFINED CMAKE_PREFIX_PATH)
     set(CMAKE_PREFIX_PATH)
 endif()
 
+include(cmake/add_compiler_path_to_prefix.cmake)
+
 # add_compile_definitions("_USE_MATH_DEFINES")
 add_subdirectory(libthreebody)
 add_subdirectory(libthreebodyfractal)
+
 
 # add_subdirectory(old)

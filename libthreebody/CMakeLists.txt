@@ -10,6 +10,8 @@ add_library(threebody STATIC
     libthreebody.h 
     libthreebody.cpp)
 
+target_compile_options(threebody PUBLIC -mavx -mavx2 -mfma)
+
 add_executable(test_libthreebody test_tb.cpp)
 
 target_link_libraries(test_libthreebody PRIVATE threebody)

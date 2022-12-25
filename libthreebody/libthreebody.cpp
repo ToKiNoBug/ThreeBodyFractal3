@@ -1,5 +1,8 @@
 #include "libthreebody.h"
 
+#include <immintrin.h>
+#include <xmmintrin.h>
+
 using namespace libthreebody;
 
 double libthreebody::compute_potential(const Eigen::Array33d &position,
@@ -28,13 +31,30 @@ void libthreebody::compute_acclerate(const Eigen::Array33d &x,
 
   for (int i = 0; i < 3; i++) {
     for (int j = i + 1; j < 3; j++) {
+      /*
+      Eigen::Array3d xj_sub_xi;
+
+      double temp = 0;
+
+      for (int r = 0; r < 3; r++) {
+        xj_sub_xi[r] = x(r, j) - x(r, i);
+        temp += xj_sub_xi[r] * xj_sub_xi[r];
+      }
+      */
+
       auto xj_sub_xi = x.col(j) - x.col(i);
       const double distanceSquare = xj_sub_xi.square().sum();
       const double distance = std::sqrt(distanceSquare);
+      /*
+      for (int r = 0; r < 3; r++) {
+        xj_sub_xi *= G / (distanceSquare * distance);
+        dv->operator()(r, i) += mass(j) * xj_sub_xi(r);
+        dv->operator()(r, j) -= mass(i) * xj_sub_xi(r);
+      }
+      */
 
       auto G_mult_diffXji_div_dist_pow_5_2 =
           G * xj_sub_xi / (distanceSquare * distance);
-
       dv->col(i) += mass(j) * G_mult_diffXji_div_dist_pow_5_2;
       dv->col(j) -= mass(i) * G_mult_diffXji_div_dist_pow_5_2;
     }
@@ -48,6 +68,27 @@ void libthreebody::compute_potential_acclerate(
   double pot = 0;
   for (int i = 0; i < 3; i++) {
     for (int j = i + 1; j < 3; j++) {
+      /*
+      Eigen::Array3d xj_sub_xi;
+
+      double temp = 0;
+
+      for (int r = 0; r < 3; r++) {
+        xj_sub_xi[r] = position(r, j) - position(r, i);
+        temp += xj_sub_xi[r] * xj_sub_xi[r];
+      }
+
+      // auto xj_sub_xi = x.col(j) - x.col(i);
+      const double distanceSquare = temp;
+      const double distance = std::sqrt(distanceSquare);
+
+      for (int r = 0; r < 3; r++) {
+        xj_sub_xi *= G / (distanceSquare * distance);
+        acclerate->operator()(r, i) += mass(j) * xj_sub_xi(r);
+        acclerate->operator()(r, j) -= mass(i) * xj_sub_xi(r);
+      }
+      */
+
       auto xj_sub_xi = position.col(j) - position.col(i);
       const double distanceSquare = xj_sub_xi.square().sum();
       const double distance = std::sqrt(distanceSquare);
@@ -83,10 +124,61 @@ void libthreebody::rk4(const state_t &y_n, const mass_t &mass,
   k4.position = y_n.velocity + step * k3.velocity;
   compute_acclerate(y_n.position + step * k3.position, mass, &k4.velocity);
 
-  y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position +
-                                          2 / 6.0 * k3.position + k4.position);
-  y_n1->velocity = y_n.velocity + step * (k1.velocity + 2 / 6.0 * k2.velocity +
-                                          2 / 6.0 * k3.velocity + k4.velocity);
+  const double *y_nd = y_n.data(), *k1d = k1.data(), *k2d = k2.data(),
+               *k3d = k3.data(), *k4d = k4.data();
+
+  double *y_n1d = y_n1->data();
+  int idx;
+  for (idx = 0; idx < 16; idx += 4) {
+    const __m256d one_div_three = _mm256_set1_pd(1.0 / 3.0);
+    const __m256d step_ = _mm256_set1_pd(step);
+
+    __m256d temp;
+    {
+      __m256d k1_ = _mm256_load_pd(k1d + idx);
+      __m256d k2_ = _mm256_load_pd(k2d + idx);
+      __m256d k3_ = _mm256_load_pd(k3d + idx);
+      __m256d k4_ = _mm256_load_pd(k4d + idx);
+
+      __m256d temp1 = _mm256_fmadd_pd(k2_, one_div_three, k1_);
+      __m256d temp2 = _mm256_fmadd_pd(k3_, one_div_three, k4_);
+
+      temp = _mm256_add_pd(temp1, temp2);
+    }
+
+    __m256d res = _mm256_fmadd_pd(temp, step_, _mm256_load_pd(y_nd + idx));
+
+    _mm256_store_pd(y_n1d + idx, res);
+  }
+
+  {
+    const __m128d one_div_three = _mm_set1_pd(1.0 / 3.0);
+    const __m128d step_ = _mm_set1_pd(step);
+
+    __m128d temp;
+    {
+      __m128d k1_ = _mm_load_pd(k1d + idx);
+      __m128d k2_ = _mm_load_pd(k2d + idx);
+      __m128d k3_ = _mm_load_pd(k3d + idx);
+      __m128d k4_ = _mm_load_pd(k4d + idx);
+
+      __m128d temp1 = _mm_fmadd_pd(k2_, one_div_three, k1_);
+      __m128d temp2 = _mm_fmadd_pd(k3_, one_div_three, k4_);
+
+      temp = _mm_add_pd(temp1, temp2);
+    }
+
+    __m128d res = _mm_fmadd_pd(temp, step_, _mm_load_pd(y_nd + idx));
+
+    _mm_store_pd(y_n1d + idx, res);
+  }
+
+  /*
+    y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position
+    + 2 / 6.0 * k3.position + k4.position); y_n1->velocity = y_n.velocity + step
+    * (k1.velocity + 2 / 6.0 * k2.velocity + 2 / 6.0 * k3.velocity +
+    k4.velocity);
+                                            */
 }
 
 void libthreebody::rk4_2(const state_t &y_n, const mass_t &mass,
@@ -108,10 +200,61 @@ void libthreebody::rk4_2(const state_t &y_n, const mass_t &mass,
   k4.position = y_n.velocity + step * k3.velocity;
   compute_acclerate(y_n.position + step * k3.position, mass, &k4.velocity);
 
-  y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position +
-                                          2 / 6.0 * k3.position + k4.position);
-  y_n1->velocity = y_n.velocity + step * (k1.velocity + 2 / 6.0 * k2.velocity +
-                                          2 / 6.0 * k3.velocity + k4.velocity);
+  const double *y_nd = y_n.data(), *k1d = k1.data(), *k2d = k2.data(),
+               *k3d = k3.data(), *k4d = k4.data();
+
+  double *y_n1d = y_n1->data();
+  int idx;
+  for (idx = 0; idx < 16; idx += 4) {
+    const __m256d one_div_three = _mm256_set1_pd(1.0 / 3.0);
+    const __m256d step_ = _mm256_set1_pd(step);
+
+    __m256d temp;
+    {
+      __m256d k1_ = _mm256_load_pd(k1d + idx);
+      __m256d k2_ = _mm256_load_pd(k2d + idx);
+      __m256d k3_ = _mm256_load_pd(k3d + idx);
+      __m256d k4_ = _mm256_load_pd(k4d + idx);
+
+      __m256d temp1 = _mm256_fmadd_pd(k2_, one_div_three, k1_);
+      __m256d temp2 = _mm256_fmadd_pd(k3_, one_div_three, k4_);
+
+      temp = _mm256_add_pd(temp1, temp2);
+    }
+
+    __m256d res = _mm256_fmadd_pd(temp, step_, _mm256_load_pd(y_nd + idx));
+
+    _mm256_store_pd(y_n1d + idx, res);
+  }
+
+  {
+    const __m128d one_div_three = _mm_set1_pd(1.0 / 3.0);
+    const __m128d step_ = _mm_set1_pd(step);
+
+    __m128d temp;
+    {
+      __m128d k1_ = _mm_load_pd(k1d + idx);
+      __m128d k2_ = _mm_load_pd(k2d + idx);
+      __m128d k3_ = _mm_load_pd(k3d + idx);
+      __m128d k4_ = _mm_load_pd(k4d + idx);
+
+      __m128d temp1 = _mm_fmadd_pd(k2_, one_div_three, k1_);
+      __m128d temp2 = _mm_fmadd_pd(k3_, one_div_three, k4_);
+
+      temp = _mm_add_pd(temp1, temp2);
+    }
+
+    __m128d res = _mm_fmadd_pd(temp, step_, _mm_load_pd(y_nd + idx));
+
+    _mm_store_pd(y_n1d + idx, res);
+  }
+
+  /*
+    y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position
+    + 2 / 6.0 * k3.position + k4.position); y_n1->velocity = y_n.velocity + step
+    * (k1.velocity + 2 / 6.0 * k2.velocity + 2 / 6.0 * k3.velocity +
+    k4.velocity);
+                                            */
 }
 
 void libthreebody::simulate(const input_t &__i, const compute_options &opt,
@@ -139,7 +282,6 @@ void libthreebody::simulate(const input_t &__i, const compute_options &opt,
   energy_of_y += compute_kinetic(y.velocity, mass);
 
   while (true) {
-
     const double current_max_step = opt.time_end - time;
 
     assert(current_max_step > 0);

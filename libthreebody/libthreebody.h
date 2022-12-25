@@ -21,9 +21,14 @@ const double as = omega_s * vs;
 
 using mass_t = Eigen::Array3d;
 
-struct state_t {
+struct alignas(32) state_t {
   Eigen::Array33d position;
   Eigen::Array33d velocity;
+
+  inline double *data() noexcept { return this->position.data(); }
+  inline const double *data() const noexcept { return this->position.data(); }
+
+  constexpr inline int size() const noexcept { return 18; }
 };
 
 double compute_kinetic(const Eigen::Array33d &velocity,
@@ -69,6 +74,6 @@ struct result_t {
 
 void simulate(const input_t &input, const compute_options &opt,
               result_t *const result) noexcept;
-} // namespace libthreebody
+}  // namespace libthreebody
 
-#endif // LIBTHREEBODY_LIBTHREEBODY_H
+#endif  // LIBTHREEBODY_LIBTHREEBODY_H
