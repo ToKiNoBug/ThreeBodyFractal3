@@ -179,6 +179,26 @@ void libthreebody::rk4(const state_t &y_n, const mass_t &mass,
                                             */
 }
 
+inline Eigen::Array33d rk4_update_position(
+    const Eigen::Array33d &y_n_pos, const double __time_step,
+    const Eigen::Array33d &k_pos) noexcept {
+  alignas(32) Eigen::Array33d ret;
+  const __m256d time_step = _mm256_set1_pd(__time_step);
+
+  const double *const p_y_n_pos = y_n_pos.data();
+  const double *const p_k_pos = k_pos.data();
+  int idx;
+  for (idx = 0; idx < 8; idx += 4) {
+    __m256d ynp = _mm256_load_pd(p_y_n_pos + idx);
+    __m256d kp = _mm256_load_pd(p_k_pos + idx);
+    __m256d res = _mm256_fmadd_pd(time_step, kp, ynp);
+    _mm256_store_pd(ret.data() + idx, res);
+  }
+
+  ret(idx) = y_n_pos(idx) + __time_step * k_pos(idx);
+  return ret;
+}
+
 void libthreebody::rk4_2(const state_t &y_n, const mass_t &mass,
                          const double step, state_t *const y_n1,
                          const Eigen::Array33d &acclerate_of_y_n) noexcept {
@@ -190,13 +210,18 @@ void libthreebody::rk4_2(const state_t &y_n, const mass_t &mass,
   k1.velocity = acclerate_of_y_n;
 
   k2.position = y_n.velocity + half_step * k1.velocity;
-  compute_acclerate(y_n.position + half_step * k1.position, mass, &k2.velocity);
+  compute_acclerate(rk4_update_position(y_n.position, half_step, k1.position)
+                    // y_n.position + half_step * k1.position
+                    ,
+                    mass, &k2.velocity);
 
   k3.position = y_n.velocity + half_step * k2.velocity;
-  compute_acclerate(y_n.position + half_step * k2.position, mass, &k3.velocity);
+  compute_acclerate(rk4_update_position(y_n.position, half_step, k2.position),
+                    mass, &k3.velocity);
 
   k4.position = y_n.velocity + step * k3.velocity;
-  compute_acclerate(y_n.position + step * k3.position, mass, &k4.velocity);
+  compute_acclerate(rk4_update_position(y_n.position, step, k3.position), mass,
+                    &k4.velocity);
 
   const double *y_nd = y_n.data(), *k1d = k1.data(), *k2d = k2.data(),
                *k3d = k3.data(), *k4d = k4.data();
@@ -248,8 +273,10 @@ void libthreebody::rk4_2(const state_t &y_n, const mass_t &mass,
   }
 
   /*
-    y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position
-    + 2 / 6.0 * k3.position + k4.position); y_n1->velocity = y_n.velocity + step
+    y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 *
+    k2.position
+    + 2 / 6.0 * k3.position + k4.position); y_n1->velocity = y_n.velocity +
+    step
     * (k1.velocity + 2 / 6.0 * k2.velocity + 2 / 6.0 * k3.velocity +
     k4.velocity);
                                             */
