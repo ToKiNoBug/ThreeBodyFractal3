@@ -17,7 +17,9 @@ find_package(LibLZMA REQUIRED)
 
 add_library(threebodyfractal STATIC
     threebodyfractal.h
-    threebodyfractal.cpp)
+    threebodyfractal.cpp
+    save_binfile.cpp
+    load_binfile.cpp)
 
 include_directories(${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody ${LIBLZMA_INCLUDE_DIRS})
 

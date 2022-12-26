@@ -76,7 +76,12 @@ int main() {
   }
   {
     const size_t buffer_bytes = map_result.byte_count() * 2.5;
+#ifdef WIN32
+    void *const buffer = _aligned_malloc(map_result.byte_count() * 2.5, 32);
+#else
+
     void *const buffer = aligned_alloc(32, map_result.byte_count() * 2.5);
+#endif
 
     ok = libthreebody::save_fractal_bin_file("test.tbf", input, wind, opt,
                                              map_result, buffer, buffer_bytes);

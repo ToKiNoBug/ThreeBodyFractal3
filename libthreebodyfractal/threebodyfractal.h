@@ -34,6 +34,18 @@ bool save_fractal_bin_file(std::string_view filename,
                            void *const buffer,
                            const size_t buffer_bytes) noexcept;
 
+bool fractal_bin_file_get_information(
+    const fractal_utils::binfile &binfile, size_t *const rows_dest = nullptr,
+    size_t *const cols_dest = nullptr,
+    input_t *const center_input_dest = nullptr,
+    fractal_utils::center_wind<double> *const wind_dest = nullptr,
+    compute_options *const opt_dest = nullptr) noexcept;
+
+bool fractal_bin_file_get_end_state(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_state_dest,
+    const bool examine_map_size = true) noexcept;
+
 }  // namespace libthreebody
 
 #endif  // THREEBODYFRACTAL3_THREEBODYFRACTAL_H
