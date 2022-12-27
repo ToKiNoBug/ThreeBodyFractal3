@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include <map>
-// #define NBT_MAP_TYPE std::map
+#define NBT_MAP_TYPE std::map
 #include <nbt.hpp>
 
 #include "threebodyfractal.h"
@@ -233,7 +233,7 @@ bool fractal_bin_file_write_basical_information(
                   {"y_span", TagDouble(wind.y_span)}};
   // printf("line = %i\n", __LINE__);
   //  write compute_options
-  tags["compute_options"] =
+  tags["compute_option"] =
       TagCompound{{"time_end", TagDouble(opt.time_end)},
                   {"max_relative_error", TagDouble(opt.max_relative_error)},
                   {"step_guess", TagDouble(opt.step_guess)}};

@@ -74,6 +74,7 @@ int main() {
     printf("Failed to write image.\n");
     return 1;
   }
+  // save
   {
     const size_t buffer_bytes = map_result.byte_count() * 2.5;
 #ifdef WIN32

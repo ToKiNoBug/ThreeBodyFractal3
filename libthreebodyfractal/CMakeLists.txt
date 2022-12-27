@@ -48,5 +48,7 @@ target_link_libraries(threebodyfractal PUBLIC
     fractal_utils::png_utils)
 
 add_executable(test_tbf test_tbf.cpp)
-
 target_link_libraries(test_tbf PUBLIC threebodyfractal ${tbf_dependents})
+
+add_executable(test_tbf_load test_tbf2.cpp)
+target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents})
