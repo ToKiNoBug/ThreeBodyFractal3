@@ -1,11 +1,12 @@
 project(ThreeBodyFractal3_libthreebodyfractal LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 find_package(OpenMP REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
 
 find_package(PNG REQUIRED)
 
@@ -15,13 +16,18 @@ find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils REQUIRE
 
 find_package(LibLZMA REQUIRED)
 
+# find_package(Boost COMPONENTS container)
 add_library(threebodyfractal STATIC
     threebodyfractal.h
     threebodyfractal.cpp
     save_binfile.cpp
     load_binfile.cpp)
 
-include_directories(${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody ${LIBLZMA_INCLUDE_DIRS})
+include_directories(${fractal_utils_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/libthreebody
+    ${LIBLZMA_INCLUDE_DIRS}
+    ${cpp_nbt_include_dir}
+)
 
 set(tbf_dependents
     threebody
@@ -30,6 +36,8 @@ set(tbf_dependents
     fractal_utils::png_utils
     OpenMP::OpenMP_CXX
     LibLZMA::LibLZMA)
+
+target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
 
 target_link_libraries(threebodyfractal PUBLIC
 

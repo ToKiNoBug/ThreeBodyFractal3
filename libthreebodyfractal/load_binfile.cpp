@@ -22,6 +22,8 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
 // ret = lzma_auto_decoder(lzma_stream *strm, uint64_t memlimit, uint32_t
 // flags)
 #warning not finished
+
+  return true;
 }
 bool libthreebody::fractal_bin_file_get_end_state(
     const fractal_utils::binfile &binfile,
@@ -53,4 +55,6 @@ bool libthreebody::fractal_bin_file_get_end_state(
       return false;
     }
   }
+#warning not finished yet.
+  return true;
 }
