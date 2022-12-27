@@ -3,10 +3,11 @@
 
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
+#include <math.h>
 #endif
+#include <cmath>
 
 #include <Eigen/Dense>
-#include <cmath>
 
 namespace libthreebody {
 
@@ -74,6 +75,6 @@ struct result_t {
 
 void simulate(const input_t &input, const compute_options &opt,
               result_t *const result) noexcept;
-}  // namespace libthreebody
+} // namespace libthreebody
 
-#endif  // LIBTHREEBODY_LIBTHREEBODY_H
+#endif // LIBTHREEBODY_LIBTHREEBODY_H

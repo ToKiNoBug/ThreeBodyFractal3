@@ -5,7 +5,7 @@
 #include "threebodyfractal.h"
 
 #include <map>
-#define NBT_MAP_TYPE std::map
+
 #include <nbt.hpp>
 
 bool libthreebody::fractal_bin_file_get_information(

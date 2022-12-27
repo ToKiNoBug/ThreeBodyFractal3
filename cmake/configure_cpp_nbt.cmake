@@ -7,7 +7,7 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/3rdParty/cpp-nbt/nbt.hpp)
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdParty
         COMMAND_ERROR_IS_FATAL ANY)
 else()
-    message(STATUS "cpp-nbt found. Downloading...")
+    message(STATUS "cpp-nbt found.")
 endif()
 
 execute_process(COMMAND git checkout code-from-buffer

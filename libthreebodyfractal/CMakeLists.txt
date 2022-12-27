@@ -16,7 +16,6 @@ find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils REQUIRE
 
 find_package(LibLZMA REQUIRED)
 
-# find_package(Boost COMPONENTS container)
 add_library(threebodyfractal STATIC
     threebodyfractal.h
     threebodyfractal.cpp
@@ -37,8 +36,6 @@ set(tbf_dependents
     OpenMP::OpenMP_CXX
     LibLZMA::LibLZMA)
 
-target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
-
 target_link_libraries(threebodyfractal PUBLIC
 
     OpenMP::OpenMP_CXX
@@ -47,8 +44,22 @@ target_link_libraries(threebodyfractal PUBLIC
     fractal_utils::core_utils
     fractal_utils::png_utils)
 
+find_package(Boost COMPONENTS container)
+
+if(${BOOST_FOUND})
+    message(STATUS "Boost include dirs = " ${Boost_INCLUDE_DIRS})
+    target_include_directories(threebodyfractal PRIVATE ${Boost_INCLUDE_DIRS})
+else()
+    message(STATUS "Boost::container not found. Use std::map instead")
+    target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
+endif()
+
+include(${CMAKE_SOURCE_DIR}/cmake/get_lto_options.cmake)
+
 add_executable(test_tbf test_tbf.cpp)
 target_link_libraries(test_tbf PUBLIC threebodyfractal ${tbf_dependents})
+target_compile_options(test_tbf PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_load test_tbf2.cpp)
 target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents})
+target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})

@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include <map>
-#define NBT_MAP_TYPE std::map
+
 #include <nbt.hpp>
 
 #include "threebodyfractal.h"
