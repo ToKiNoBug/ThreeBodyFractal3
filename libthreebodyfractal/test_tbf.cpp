@@ -13,7 +13,7 @@ int main() {
   using namespace libthreebody;
   using namespace fractal_utils;
 
-  const int rows = 32, cols = 32;
+  const int rows = 320, cols = 320;
 
   fractal_map map_result =
       fractal_map::create(rows, cols, sizeof(libthreebody::result_t));
@@ -27,24 +27,31 @@ int main() {
   wind.x_span = wind.y_span / map_result.rows * map_result.cols;
 
   input_t input;
-
-  input.beg_state.position = {{-1.03584, -0.0215062, 2.08068},
-                              {-6.64071, 1.34016, -9.49566},
-                              {-6.73013, 8.17534, 1.4536}};
+  /*-0.126186392581979
+-0.262340533926015
+-0.0512572533808924
+-0.0609798828559385
+0.0762336331145880
+0.128100099879297*/
+  input.beg_state.position = {
+      {-2.27203257188855, 1.09628120907693, 1.17575136281162},
+      {-0.519959453298081, -1.98504043661515, 2.50499988991323},
+      {0, 0, 0}};
   input.beg_state.position *= rs;
 
-  input.beg_state.velocity = {{0.384347, 0.0969975, -0.50161},
-                              {-0.697374, -0.766521, 0.250808},
-                              {-0.394691, -0.192819, 0.747116}};
+  input.beg_state.velocity = {
+      {-0.126186392581979, -0.0512572533808924, 0.0762336331145880},
+      {-0.262340533926015, -0.0609798828559385, 0.128100099879297},
+      {0, 0, 0}};
   input.beg_state.velocity *= vs;
 
-  input.mass = {3.20948, 1.84713, 4.6762};
+  input.mass = {1, 2, 3};
   input.mass *= Ms;
 
   compute_options opt;
   opt.max_relative_error = 1e-4;
   opt.step_guess = 1e-2 * year;
-  opt.time_end = 10 * year;
+  opt.time_end = 5 * year;
 
   double wtime;
   wtime = omp_get_wtime();

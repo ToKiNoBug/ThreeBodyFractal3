@@ -78,6 +78,11 @@ void simulate(const input_t &input, const compute_options &opt,
 void simulate_2(const input_t &input, const compute_options &opt,
                 result_t *const result) noexcept;
 
-}  // namespace libthreebody
+bool load_parameters_from_D3B3(std::string_view filename,
+                               mass_t *dest_mass = nullptr,
+                               state_t *dest_begstate = nullptr,
+                               compute_options *opt = nullptr) noexcept;
 
-#endif  // LIBTHREEBODY_LIBTHREEBODY_H
+} // namespace libthreebody
+
+#endif // LIBTHREEBODY_LIBTHREEBODY_H

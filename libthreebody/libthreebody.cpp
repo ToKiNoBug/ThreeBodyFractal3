@@ -31,21 +31,30 @@ void libthreebody::compute_acclerate(const Eigen::Array33d &x,
 
   for (int i = 0; i < 3; i++) {
     for (int j = i + 1; j < 3; j++) {
-      Eigen::Array3d xj_sub_xi;
-
       double temp = 0;
+      alignas(32) Eigen::Array4d xj_sub_xi;
 
       for (int r = 0; r < 3; r++) {
         xj_sub_xi[r] = x(r, j) - x(r, i);
         temp += xj_sub_xi[r] * xj_sub_xi[r];
       }
 
+      xj_sub_xi[3] = 0;
+
       // auto xj_sub_xi = x.col(j) - x.col(i);
       const double distanceSquare = temp;
       const double distance = std::sqrt(distanceSquare);
 
+      {
+        __m256d j_sub_i = _mm256_load_pd(xj_sub_xi.data());
+        __m256d mul = _mm256_set1_pd(G / (distanceSquare * distance));
+
+        __m256d res = _mm256_mul_pd(j_sub_i, mul);
+        _mm256_store_pd(xj_sub_xi.data(), res);
+      }
+
       for (int r = 0; r < 3; r++) {
-        xj_sub_xi[r] *= G / (distanceSquare * distance);
+        // xj_sub_xi[r] *= G / (distanceSquare * distance);
         dv->operator()(r, i) += mass(j) * xj_sub_xi(r);
         dv->operator()(r, j) -= mass(i) * xj_sub_xi(r);
       }
@@ -177,9 +186,9 @@ void libthreebody::rk4(const state_t &y_n, const mass_t &mass,
                                           2 / 6.0 * k3.velocity + k4.velocity);
 }
 
-inline Eigen::Array33d rk4_update_position(
-    const Eigen::Array33d &y_n_pos, const double __time_step,
-    const Eigen::Array33d &k_pos) noexcept {
+inline Eigen::Array33d
+rk4_update_position(const Eigen::Array33d &y_n_pos, const double __time_step,
+                    const Eigen::Array33d &k_pos) noexcept {
   alignas(32) Eigen::Array33d ret;
   const __m256d time_step = _mm256_set1_pd(__time_step);
 
@@ -452,4 +461,72 @@ void libthreebody::simulate_2(const input_t &__i, const compute_options &opt,
   result->end_state = y;
   result->fail_search_times = fail_search_times;
   result->iterate_times = iterate_times;
+}
+
+bool libthreebody::load_parameters_from_D3B3(std::string_view filename,
+                                             mass_t *mass, state_t *begstate,
+                                             compute_options *opt) noexcept {
+
+  FILE *const fp = fopen(filename.data(), "rb");
+  if (fp == nullptr) {
+    printf("\nError : failed to open file %s\n", filename.data());
+    return false;
+  }
+
+  std::array<uint32_t, 2> DC_BC;
+  fread(DC_BC.data(), sizeof(uint32_t), 2, fp);
+
+  if (DC_BC[0] != 3 || DC_BC[1] != 3) {
+    printf("\nError : the file is not for 3 dim 3 bodies simulation, but %u "
+           "dim %u bodies.\n",
+           DC_BC[0], DC_BC[1]);
+    return false;
+  }
+
+  if (mass != nullptr) {
+    fread(mass->data(), sizeof(double), 3, fp);
+  } else {
+    fseek(fp, sizeof(double[3]), SEEK_CUR);
+  }
+
+  if (begstate != nullptr) {
+    fread(begstate->position.data(), sizeof(double), 9, fp);
+    fread(begstate->velocity.data(), sizeof(double), 9, fp);
+  } else {
+    fseek(fp, sizeof(double[18]), SEEK_CUR);
+  }
+
+  if (opt != nullptr) {
+    double buffer[3];
+    fread(buffer, sizeof(double), 3, fp);
+    opt->max_relative_error = 1e-4;
+    opt->step_guess = buffer[1];
+    opt->time_end = buffer[2] - buffer[0];
+  }
+
+  fclose(fp);
+
+  return true;
+  /**
+
+      {
+          uint32_t dC=DIM_COUNT,bC=BODY_COUNT;
+          file.write((const char*)&dC,sizeof(dC));
+          file.write((const char*)&bC,sizeof(bC));
+          //write dim_count, then body_count in uint32
+      }
+
+      //write mass
+      file.write((const char*)mass.data(),sizeof(mass));
+
+      //write position in row major
+      file.write((const char*)y0.first.data(),sizeof(double)*y0.first.size());
+
+      //write velocity in row major
+      file.write((const char*)y0.second.data(),sizeof(double)*y0.second.size());
+
+      file.write((const char*)&ts.first,sizeof(ts.first));
+      file.write((const char*)&step,sizeof(step));
+      file.write((const char*)&ts.second,sizeof(ts.second));
+  */
 }
