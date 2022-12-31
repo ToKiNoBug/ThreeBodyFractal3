@@ -13,7 +13,7 @@ int main() {
   using namespace libthreebody;
   using namespace fractal_utils;
 
-  const int rows = 32, cols = 32;
+  const int rows = 320, cols = 320;
 
   fractal_map map_result =
       fractal_map::create(rows, cols, sizeof(libthreebody::result_t));

@@ -8,6 +8,31 @@
 
 #include <nbt.hpp>
 
+const fractal_utils::data_block *
+find_data_block_noduplicate(const fractal_utils::binfile &binfile,
+                            libthreebody::fractal_binfile_tag tag) noexcept {
+  const fractal_utils::data_block *ret = nullptr;
+
+  for (const auto &blk : binfile.blocks) {
+    if (blk.tag == tag) {
+      if (ret != nullptr) {
+        printf("\nError : multiple datablocks have tag %i, which is not "
+               "allowed.\n",
+               int(tag));
+        return nullptr;
+      }
+      ret = &blk;
+    }
+  }
+
+  if (ret == nullptr) {
+    printf("\nError : failed to find any datablock with tag %i.\n", int(tag));
+    return nullptr;
+  }
+
+  return ret;
+}
+
 bool libthreebody::fractal_bin_file_get_information(
     const fractal_utils::binfile &binfile, size_t *const rows_dest,
     size_t *const cols_dest, input_t *const center_input_dest,
@@ -48,7 +73,7 @@ bool libthreebody::fractal_bin_file_get_information(
       return false;
     }
 
-    *rows_dest = (size_t)std::get<nbt::TagLong>(info.at("rows"));
+    *rows_dest = std::get<nbt::TagLong>(info.at("rows"));
   }
 
   if (cols_dest != nullptr) {
@@ -58,7 +83,7 @@ bool libthreebody::fractal_bin_file_get_information(
       return false;
     }
 
-    *rows_dest = (size_t)std::get<nbt::TagLong>(info.at("cols"));
+    *rows_dest = std::get<nbt::TagLong>(info.at("cols"));
   }
 
   if (center_input_dest != nullptr) {
@@ -195,12 +220,70 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
   lzma_stream xzs = LZMA_STREAM_INIT;
 
   lzma_ret ret;
-// ret = lzma_auto_decoder(lzma_stream *strm, uint64_t memlimit, uint32_t
-// flags)
-#warning not finished
+  ret = lzma_stream_decoder(&xzs, UINT64_MAX, LZMA_CONCATENATED);
+
+  if (ret != LZMA_OK) {
+    printf("\nError : function xz_decompress failed to initialize decoder "
+           "stream with error code %i.\n",
+           ret);
+    lzma_end(&xzs);
+    return false;
+  }
+
+  xzs.next_in = src;
+  xzs.avail_in = src_bytes;
+  xzs.next_out = dest;
+  xzs.avail_out = dest_capacity;
+
+  ret = lzma_code(&xzs, LZMA_RUN);
+  if (ret != LZMA_OK) {
+    printf("\nError : function xz_decompress failed to decode with error code "
+           "%i.\n",
+           ret);
+    lzma_end(&xzs);
+    return false;
+  }
+
+  ret = lzma_code(&xzs, LZMA_FINISH);
+
+  if (ret != LZMA_STREAM_END && ret != LZMA_OK) {
+    printf("\nError : function xz_decompress failed to finish with error code "
+           "%i.\n",
+           ret);
+    lzma_end(&xzs);
+    return false;
+  }
+
+  *dest_bytes = xzs.total_out;
+
+  lzma_end(&xzs);
 
   return true;
 }
+
+bool check_information(const fractal_utils::binfile &binfile,
+                       const fractal_utils::fractal_map &dest_matrix) noexcept {
+
+  size_t rows = 0, cols = 0;
+  bool ok =
+      libthreebody::fractal_bin_file_get_information(binfile, &rows, &cols);
+
+  if (!ok) {
+    printf("\nError : function check_information failed to get "
+           "information.\n");
+    return false;
+  }
+
+  if (rows != dest_matrix.rows || cols != dest_matrix.cols) {
+    printf("\nError : function check_information failed. Matrix size mismatch. "
+           "Result from binfile is (%llu,%llu), but size of matrix is "
+           "(%llu,%llu).\n",
+           rows, cols, dest_matrix.rows, dest_matrix.cols);
+    return false;
+  }
+  return true;
+}
+
 bool libthreebody::fractal_bin_file_get_end_state(
     const fractal_utils::binfile &binfile,
     fractal_utils::fractal_map *const end_state_dest,
@@ -214,22 +297,45 @@ bool libthreebody::fractal_bin_file_get_end_state(
   }
 
   if (examine_map_size) {
-    size_t rows, cols;
-    bool ok = fractal_bin_file_get_information(binfile, &rows, &cols);
-
+    bool ok = check_information(binfile, *end_state_dest);
     if (!ok) {
-      printf("\nError : function fractal_bin_file_get_end_state failed to get "
-             "information.\n");
-      return false;
-    }
-
-    if (rows != end_state_dest->rows || cols != end_state_dest->cols) {
-      printf(
-          "\nError : function fractal_bin_file_get_end_state examine_map_size "
-          "failed. Matrix size mismatch.\n");
       return false;
     }
   }
-#warning not finished yet.
+
+  const fractal_utils::data_block *const state_blk =
+      find_data_block_noduplicate(
+          binfile, libthreebody::fractal_binfile_tag::matrix_end_state);
+  if (state_blk == nullptr) {
+    return false;
+  }
+  size_t decompressed_bytes = 0;
+  bool ok = true;
+  ok = xz_decompress((uint8_t *)state_blk->data, state_blk->bytes,
+                     (uint8_t *)end_state_dest->data,
+                     end_state_dest->byte_count(), &decompressed_bytes);
+  if (!ok) {
+    return false;
+  }
+
+  if (decompressed_bytes !=
+      end_state_dest->element_count() * sizeof(double) * 18) {
+    printf("\nError : decompressed bytes mismatch. Should be %llu but infact "
+           "it is %llu.\n",
+           end_state_dest->element_count() * sizeof(double) * 18,
+           decompressed_bytes);
+    return false;
+  }
+
+  const double *const data = (double *)end_state_dest->data;
+
+  for (int64_t idx = end_state_dest->element_count() - 1; idx >= 0; idx--) {
+    memmove(end_state_dest->at<state_t>(idx).position.data(),
+            data + idx * sizeof(double[18]), sizeof(double[9]));
+    memmove(end_state_dest->at<state_t>(idx).velocity.data(),
+            data + idx * sizeof(double[18]) + sizeof(double[9]),
+            sizeof(double[9]));
+  }
+
   return true;
 }
