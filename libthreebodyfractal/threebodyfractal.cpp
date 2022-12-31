@@ -18,7 +18,7 @@ void libthreebody::compute_many(const input_t *const src, result_t *const dest,
        batch_idx++) {
     for (int idx = batch_idx * batch_size;
          idx < std::max((batch_idx + 1) * batch_size, int(count)); idx++) {
-      simulate(src[idx], opt, dest + idx);
+      simulate_2(src[idx], opt, dest + idx);
     }
   }
 }

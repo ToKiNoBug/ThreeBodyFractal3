@@ -5,9 +5,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #endif
-#include <cmath>
-
 #include <Eigen/Dense>
+#include <cmath>
 
 namespace libthreebody {
 
@@ -50,7 +49,7 @@ inline double compute_energy(const state_t &s, const mass_t &mass) noexcept {
 void rk4(const state_t &y_n, const mass_t &mass, const double step,
          state_t *const y_n1) noexcept;
 
-void rk4_2(const state_t &y_n, const mass_t &mass, const double step,
+void rk4_2(const state_t &y_n, const mass_t mass, const double step,
            state_t *const y_n1,
            const Eigen::Array33d &acclerate_of_y_n) noexcept;
 
@@ -75,6 +74,10 @@ struct result_t {
 
 void simulate(const input_t &input, const compute_options &opt,
               result_t *const result) noexcept;
-} // namespace libthreebody
 
-#endif // LIBTHREEBODY_LIBTHREEBODY_H
+void simulate_2(const input_t &input, const compute_options &opt,
+                result_t *const result) noexcept;
+
+}  // namespace libthreebody
+
+#endif  // LIBTHREEBODY_LIBTHREEBODY_H

@@ -1,14 +1,14 @@
-#include "libthreebody.h"
+#include <stdio.h>
 
 #include <iostream>
-#include <stdio.h>
+
+#include "libthreebody.h"
 
 using namespace libthreebody;
 
 using std::cout, std::endl;
 
 int main(int, char **) {
-
   input_t input;
   result_t result;
 
@@ -32,7 +32,7 @@ int main(int, char **) {
   cout << "original energy = " << compute_energy(input.beg_state, input.mass)
        << endl;
 
-  simulate(input, opt, &result);
+  simulate_2(input, opt, &result);
 
   cout << "result of position = \n" << result.end_state.position / rs << endl;
   cout << "result of velocity = \n" << result.end_state.velocity / vs << endl;
