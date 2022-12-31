@@ -351,7 +351,7 @@ void libthreebody::simulate_2(const input_t &__i, const compute_options &opt,
 
     const double current_max_step = opt.time_end - time;
 
-    assert(current_max_step > 0);
+    // assert(current_max_step > 0);
 
     step[0] = center_step / 2;
     step[1] = center_step;
