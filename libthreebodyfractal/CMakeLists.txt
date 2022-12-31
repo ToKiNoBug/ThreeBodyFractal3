@@ -63,3 +63,7 @@ target_compile_options(test_tbf PRIVATE ${ThreebodyFractal_lto_options})
 add_executable(test_tbf_load test_tbf2.cpp)
 target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents})
 target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})
+
+add_executable(test_tbf_other_input test_tbf_other_input.cpp)
+target_link_libraries(test_tbf_other_input PUBLIC threebodyfractal ${tbf_dependents})
+target_compile_options(test_tbf_other_input PRIVATE ${ThreebodyFractal_lto_options})

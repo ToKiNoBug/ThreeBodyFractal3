@@ -23,16 +23,16 @@ void libthreebody::compute_many(const input_t *const src, result_t *const dest,
   }
 }
 
-void libthreebody::compute_frame(
-    const input_t &center_input, const fractal_utils::center_wind<double> &wind,
-    const compute_options &opt,
-    fractal_utils::fractal_map *const dest) noexcept {
+void libthreebody::compute_frame(const input_t &center_input,
+                                 const fractal_utils::center_wind<double> &wind,
+                                 const compute_options &opt,
+                                 fractal_utils::fractal_map *const dest,
+                                 bool display_progress) noexcept {
   if (dest->element_bytes != sizeof(libthreebody::result_t)) {
-    printf(
-        "\nError in function libthreebody::compute_frame : element size "
-        "mismatch. dest->element_byte = %u but "
-        "sizeof(libthreebody::result_t) is %llu\n",
-        dest->element_bytes, sizeof(libthreebody::result_t));
+    printf("\nError in function libthreebody::compute_frame : element size "
+           "mismatch. dest->element_byte = %u but "
+           "sizeof(libthreebody::result_t) is %llu\n",
+           dest->element_bytes, sizeof(libthreebody::result_t));
     return;
   }
 
@@ -61,9 +61,14 @@ void libthreebody::compute_frame(
       simulate(input, opt, &dest->at<libthreebody::result_t>(r, c));
     }
     finished_rows++;
-
-    lock.lock();
-    printf("%i tasks finished.\n", int(finished_rows * dest->cols));
-    lock.unlock();
+    if (display_progress) {
+      lock.lock();
+      printf("\r[ %i / %i ] %f%% tasks finished.",
+             int(finished_rows * dest->cols), int(dest->element_count()),
+             float(100 * finished_rows * dest->cols) / dest->element_count());
+      lock.unlock();
+    }
   }
+
+  printf("\n");
 }

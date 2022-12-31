@@ -85,7 +85,7 @@ bool libthreebody::save_fractal_bin_file(
   const size_t buffer_A_capacity = buffer_B - buffer_A;
   const size_t buffer_B_capacity = buffer_A + buffer_bytes - buffer_B;
 
-  printf("Writting basical information\n");
+  // printf("Writting basical information\n");
   if (!fractal_bin_file_write_basical_information(
           fp, buffer_A, buffer_A_capacity, buffer_B, buffer_B_capacity,
           center_input, wind, opt, mat_result)) {
@@ -93,7 +93,7 @@ bool libthreebody::save_fractal_bin_file(
     printf("\nFailed to write basical_information.\n");
     return false;
   }
-  printf("Finished basical information\n");
+  // printf("Finished basical information\n");
 
   // #warning Basical information is not written here, because nbt library is
   // not avaliable.
@@ -264,7 +264,7 @@ bool fractal_bin_file_write_basical_information(
   blk.data = buffer_B;
   blk.bytes = (uint8_t *)buffer_B_cur - buffer_B;
 
-  printf("size = %i.\n", (int)blk.bytes);
+  // printf("size = %i.\n", (int)blk.bytes);
 
   // printf("line = %i\n", __LINE__);
   bool success = write_data_block(fp, blk);

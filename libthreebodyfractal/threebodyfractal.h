@@ -16,7 +16,8 @@ void compute_many(const input_t *const src, result_t *const dest,
 void compute_frame(const input_t &center_input,
                    const fractal_utils::center_wind<double> &wind,
                    const compute_options &opt,
-                   fractal_utils::fractal_map *const dest_result) noexcept;
+                   fractal_utils::fractal_map *const dest_result,
+                   bool display_progress = true) noexcept;
 
 enum fractal_binfile_tag : int64_t {
   basical_information = 1,
