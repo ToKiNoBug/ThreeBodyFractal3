@@ -1,9 +1,10 @@
+#include <omp.h>
 #include <stdio.h>
 
 #include "libcudathreebody.h"
 int main(int argC, char** argV) {
   using namespace libthreebody;
-  const int num = 10;
+  const int num = 10000;
   input_t* const inputs = new input_t[num];
   result_t* const results = new result_t[num];
 
@@ -45,9 +46,13 @@ int main(int argC, char** argV) {
       inputs[idx].beg_state = center_input.beg_state;
     }
   }
-
+  double wtime = omp_get_wtime();
   libcudathreebody::run_cuda_simulations(inputs, results, dev_inputs,
                                          dev_results, num, opt);
+  wtime = omp_get_wtime() - wtime;
+
+  printf("%i simulations finished in %F seconds. %F ms per simulation.\n", num,
+         wtime, wtime / num * 1000);
 
   libcudathreebody::free_device_memory(dev_inputs);
   libcudathreebody::free_device_memory(dev_results);

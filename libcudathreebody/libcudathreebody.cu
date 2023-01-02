@@ -4,8 +4,6 @@
 
 #include "internal.h"
 
-#include <stdio.h>
-
 void *libcudathreebody::allocate_device_memory(size_t bytes,
                                                int *errorcode) noexcept {
   void *dptr = nullptr;
@@ -93,6 +91,8 @@ bool libcudathreebody::run_cuda_simulations(
     libcudathreebody::simulate_10<<<num_run_10 / 10, 30>>>(
         (const input_t *)buffer_input_device, opt,
         (result_t *)buffer_result_device);
+    printf("%i tasks added to gpu by %i blocks.\n", num_run_10,
+           num_run_10 / 10);
   }
 
   for (int i = num_run_10; i < num; i++) {
@@ -100,8 +100,12 @@ bool libcudathreebody::run_cuda_simulations(
   }
 
   if (num_run_10 > 0) {
+
+    cudaDeviceSynchronize();
+
     ce = cudaMemcpy(dest_host, buffer_result_device,
                     sizeof(result_t) * num_run_10, cudaMemcpyDeviceToHost);
+    printf("GPU finished %i tasks.\n", num_run_10);
   }
 
   if (ce != cudaError_t::cudaSuccess) {

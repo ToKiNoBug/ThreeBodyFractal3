@@ -7,10 +7,11 @@ namespace libcudathreebody {
 constexpr double __constant__ G = ::libthreebody::G;
 constexpr double __constant__ Ms = ::libthreebody::year;
 constexpr double __constant__ omega_s = ::libthreebody::omega_s;
-constexpr double rho = ::libthreebody::rho;
-constexpr double rs = ::libthreebody::rs;
-constexpr double vs = ::libthreebody::vs;
-constexpr double as = ::libthreebody::as;
+constexpr double __constant__ rho = ::libthreebody::rho;
+constexpr double __constant__ rs = ::libthreebody::rs;
+constexpr double __constant__ vs = ::libthreebody::vs;
+constexpr double __constant__ as = ::libthreebody::as;
+constexpr double __constant__ year = ::libthreebody::year;
 
 using mass_t = ::libthreebody::mass_t;
 using state_t = ::libthreebody::state_t;

@@ -201,6 +201,11 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
   __shared__ double energy_of_y[10];
   __shared__ double time[10];
 
+  __shared__ bool terminate[10];
+  __shared__ int terminate_counter;
+
+  //__shared__ bool have_output[10];
+
   // 30
   __shared__ double step[10][3];
   __shared__ state_t y_next[10][3];
@@ -208,12 +213,13 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
   __shared__ double energy_of_y_next[10][3];
   __shared__ bool is_ok[10][3];
 
-  __shared__ uint32_t will_go_on;
+  //__shared__ uint32_t will_go_on;
 
-  constexpr uint32_t terminate_flag = 0b1111111111;
+  // constexpr uint32_t terminate_flag = 0b1111111111;
 
   if (threadIdx.x == 0) {
-    will_go_on = 0;
+
+    // will_go_on = 0;
   }
 
   const uint32_t mask = (1ULL << task_offset);
@@ -233,6 +239,9 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
 
     energy_of_y[task_offset] +=
         compute_kinetic(y[task_offset].velocity, mass[task_offset]);
+
+    terminate[task_offset] = false;
+    // have_output[task_offset] = false;
   }
 
   __syncthreads();
@@ -250,15 +259,32 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
         goon = false;
       }
 
-      const uint32_t temp = (goon) ? (0UL) : (mask);
+      terminate[task_offset] = terminate[task_offset] || !goon;
 
-      atomicOr(&will_go_on, temp);
+      // const uint32_t temp = (goon) ? (0UL) : (mask);
+
+      // atomicOr(&will_go_on, temp);
     }
 
     __syncthreads();
+    if (threadIdx.x == 0) {
+      terminate_counter = 0;
+
+      for (int i = 0; i < 10; i++) {
+        terminate_counter += terminate[i];
+      }
+    }
+
+    __syncthreads();
+
+    if (terminate_counter >= 10) {
+      break;
+    }
+    /*
     if (will_go_on == terminate_flag) {
       break;
     }
+    */
 
     // execute by each thread
     {
@@ -297,9 +323,10 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
         }
       }
 
-      const bool accept_result = (accept_idx >= 0) && (will_go_on & mask);
+      // const bool accept_result = (accept_idx >= 0) && (will_go_on & mask);
+      const bool accept_result = (accept_idx >= 0) && (!terminate[task_offset]);
 
-      if (accept_result < 0) {
+      if (accept_idx < 0) {
         center_step[task_offset] = step[task_offset][0] / 4;
         fail_iterate_times[task_offset]++;
       }
