@@ -8,6 +8,8 @@
 #include <Eigen/Dense>
 #include <cmath>
 
+#include "compile_time_pow.h"
+
 namespace libthreebody {
 
 constexpr double G = 6.67259e-11;
@@ -15,9 +17,10 @@ constexpr double Ms = 2e30;
 constexpr double year = 365 * 24 * 60 * 60;
 constexpr double omega_s = 2 * M_PI / year;
 constexpr double rho = 1.409e3;
-const double rs = 0.5 * std::pow(2 * G * Ms / (omega_s * omega_s), 1.0 / 3);
-const double vs = omega_s * rs;
-const double as = omega_s * vs;
+constexpr double rs =
+    0.5 * internal::inv_cubic(2 * G * Ms / (omega_s * omega_s));
+constexpr double vs = omega_s * rs;
+constexpr double as = omega_s * vs;
 
 using mass_t = Eigen::Array3d;
 
@@ -83,6 +86,6 @@ bool load_parameters_from_D3B3(std::string_view filename,
                                state_t *dest_begstate = nullptr,
                                compute_options *opt = nullptr) noexcept;
 
-} // namespace libthreebody
+}  // namespace libthreebody
 
-#endif // LIBTHREEBODY_LIBTHREEBODY_H
+#endif  // LIBTHREEBODY_LIBTHREEBODY_H

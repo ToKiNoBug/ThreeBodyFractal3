@@ -12,6 +12,8 @@ int main(int, char **) {
   input_t input;
   result_t result;
 
+  constexpr double test_27 = libthreebody::internal::inv_cubic(27.0e24);
+
   input.mass = {3.20948, 1.84713, 4.6762};
   input.mass *= Ms / 20;
 
