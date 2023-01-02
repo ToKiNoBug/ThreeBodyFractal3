@@ -210,8 +210,10 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
 
   __shared__ uint32_t will_go_on;
 
+  constexpr uint32_t terminate_flag = 0b1111111111;
+
   if (threadIdx.x == 0) {
-    will_go_on = (1ULL << 11) - 1;
+    will_go_on = 0;
   }
 
   const uint32_t mask = (1ULL << task_offset);
@@ -254,7 +256,7 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
     }
 
     __syncthreads();
-    if (will_go_on == 0) {
+    if (will_go_on == terminate_flag) {
       break;
     }
 

@@ -4,6 +4,8 @@
 
 #include "internal.h"
 
+#include <stdio.h>
+
 void *libcudathreebody::allocate_device_memory(size_t bytes,
                                                int *errorcode) noexcept {
   void *dptr = nullptr;
@@ -74,27 +76,33 @@ bool libcudathreebody::run_cuda_simulations(
     int *errorcode) {
   cudaError_t ce;
 
-  const int num_run_10 = 10 * (num / 10);
+  const int num_run_10 = 10 * ((num) / 10);
 
-  ce = cudaMemcpy(buffer_input_device, inputs_host,
-                  sizeof(input_t) * num_run_10, cudaMemcpyHostToDevice);
-  if (ce != cudaError_t::cudaSuccess) {
-    if (errorcode != nullptr) {
-      *errorcode = ce;
+  printf("num_run_10 = %i\n", num_run_10);
+
+  if (num_run_10 > 0) {
+    ce = cudaMemcpy(buffer_input_device, inputs_host,
+                    sizeof(input_t) * num_run_10, cudaMemcpyHostToDevice);
+    if (ce != cudaError_t::cudaSuccess) {
+      if (errorcode != nullptr) {
+        *errorcode = ce;
+      }
+      return false;
     }
-    return false;
-  }
 
-  libcudathreebody::simulate_10<<<num_run_10 / 10, 30>>>(
-      (const input_t *)buffer_input_device, opt,
-      (result_t *)buffer_result_device);
+    libcudathreebody::simulate_10<<<num_run_10 / 10, 30>>>(
+        (const input_t *)buffer_input_device, opt,
+        (result_t *)buffer_result_device);
+  }
 
   for (int i = num_run_10; i < num; i++) {
     libthreebody::simulate_2(inputs_host[i], opt, &dest_host[i]);
   }
 
-  ce = cudaMemcpy(dest_host, buffer_result_device,
-                  sizeof(result_t) * num_run_10, cudaMemcpyDeviceToHost);
+  if (num_run_10 > 0) {
+    ce = cudaMemcpy(dest_host, buffer_result_device,
+                    sizeof(result_t) * num_run_10, cudaMemcpyDeviceToHost);
+  }
 
   if (ce != cudaError_t::cudaSuccess) {
     if (errorcode != nullptr) {
