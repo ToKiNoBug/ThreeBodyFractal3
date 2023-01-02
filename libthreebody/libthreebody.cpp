@@ -118,8 +118,8 @@ void rk4_update_state_fma(double step, const double *y_nd, const double *k1d,
                           const double *k4d, double *y_n1d) {
   int idx;
   for (idx = 0; idx < 16; idx += 4) {
-    const __m256d one_div_three = _mm256_set1_pd(1.0 / 3.0);
-    const __m256d step_ = _mm256_set1_pd(step);
+    const __m256d two = _mm256_set1_pd(2.0);
+    const __m256d step_div_6 = _mm256_set1_pd(step / 6.0);
 
     __m256d temp;
     {
@@ -128,20 +128,20 @@ void rk4_update_state_fma(double step, const double *y_nd, const double *k1d,
       __m256d k3_ = _mm256_load_pd(k3d + idx);
       __m256d k4_ = _mm256_load_pd(k4d + idx);
 
-      __m256d temp1 = _mm256_fmadd_pd(k2_, one_div_three, k1_);
-      __m256d temp2 = _mm256_fmadd_pd(k3_, one_div_three, k4_);
+      __m256d temp1 = _mm256_fmadd_pd(k2_, two, k1_);
+      __m256d temp2 = _mm256_fmadd_pd(k3_, two, k4_);
 
       temp = _mm256_add_pd(temp1, temp2);
     }
 
-    __m256d res = _mm256_fmadd_pd(temp, step_, _mm256_load_pd(y_nd + idx));
+    __m256d res = _mm256_fmadd_pd(temp, step_div_6, _mm256_load_pd(y_nd + idx));
 
     _mm256_store_pd(y_n1d + idx, res);
   }
 
   {
-    const __m128d one_div_three = _mm_set1_pd(1.0 / 3.0);
-    const __m128d step_ = _mm_set1_pd(step);
+    const __m128d two = _mm_set1_pd(2.0);
+    const __m128d step_div_6 = _mm_set1_pd(step / 6.0);
 
     __m128d temp;
     {
@@ -150,13 +150,13 @@ void rk4_update_state_fma(double step, const double *y_nd, const double *k1d,
       __m128d k3_ = _mm_load_pd(k3d + idx);
       __m128d k4_ = _mm_load_pd(k4d + idx);
 
-      __m128d temp1 = _mm_fmadd_pd(k2_, one_div_three, k1_);
-      __m128d temp2 = _mm_fmadd_pd(k3_, one_div_three, k4_);
+      __m128d temp1 = _mm_fmadd_pd(k2_, two, k1_);
+      __m128d temp2 = _mm_fmadd_pd(k3_, two, k4_);
 
       temp = _mm_add_pd(temp1, temp2);
     }
 
-    __m128d res = _mm_fmadd_pd(temp, step_, _mm_load_pd(y_nd + idx));
+    __m128d res = _mm_fmadd_pd(temp, step_div_6, _mm_load_pd(y_nd + idx));
 
     _mm_store_pd(y_n1d + idx, res);
   }
@@ -180,15 +180,17 @@ void libthreebody::rk4(const state_t &y_n, const mass_t &mass,
   k4.position = y_n.velocity + step * k3.velocity;
   compute_acclerate(y_n.position + step * k3.position, mass, &k4.velocity);
 
-  y_n1->position = y_n.position + step * (k1.position + 2 / 6.0 * k2.position +
-                                          2 / 6.0 * k3.position + k4.position);
-  y_n1->velocity = y_n.velocity + step * (k1.velocity + 2 / 6.0 * k2.velocity +
-                                          2 / 6.0 * k3.velocity + k4.velocity);
+  y_n1->position = y_n.position + step / 6.0 *
+                                      (1 * k1.position + 2 * k2.position +
+                                       2 * k3.position + 1 * k4.position);
+  y_n1->velocity = y_n.velocity + step / 6.0 *
+                                      (1 * k1.velocity + 2 * k2.velocity +
+                                       2 * k3.velocity + 1 * k4.velocity);
 }
 
-inline Eigen::Array33d
-rk4_update_position(const Eigen::Array33d &y_n_pos, const double __time_step,
-                    const Eigen::Array33d &k_pos) noexcept {
+inline Eigen::Array33d rk4_update_position(
+    const Eigen::Array33d &y_n_pos, const double __time_step,
+    const Eigen::Array33d &k_pos) noexcept {
   alignas(32) Eigen::Array33d ret;
   const __m256d time_step = _mm256_set1_pd(__time_step);
 
@@ -466,7 +468,6 @@ void libthreebody::simulate_2(const input_t &__i, const compute_options &opt,
 bool libthreebody::load_parameters_from_D3B3(std::string_view filename,
                                              mass_t *mass, state_t *begstate,
                                              compute_options *opt) noexcept {
-
   FILE *const fp = fopen(filename.data(), "rb");
   if (fp == nullptr) {
     printf("\nError : failed to open file %s\n", filename.data());
@@ -477,9 +478,10 @@ bool libthreebody::load_parameters_from_D3B3(std::string_view filename,
   fread(DC_BC.data(), sizeof(uint32_t), 2, fp);
 
   if (DC_BC[0] != 3 || DC_BC[1] != 3) {
-    printf("\nError : the file is not for 3 dim 3 bodies simulation, but %u "
-           "dim %u bodies.\n",
-           DC_BC[0], DC_BC[1]);
+    printf(
+        "\nError : the file is not for 3 dim 3 bodies simulation, but %u "
+        "dim %u bodies.\n",
+        DC_BC[0], DC_BC[1]);
     return false;
   }
 
