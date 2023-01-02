@@ -23,9 +23,13 @@ endif()
 
 include(cmake/add_compiler_path_to_prefix.cmake)
 
-# set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pg)
+if(NOT DEFINED tb_build_examples)
+  set(tb_build_examples ON)
+endif()
 
+# set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pg)
 # add_compile_definitions("_USE_MATH_DEFINES")
+
 add_subdirectory(libthreebody)
 add_subdirectory(libthreebodyfractal)
 add_subdirectory(libcudathreebody)

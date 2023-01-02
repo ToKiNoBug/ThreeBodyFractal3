@@ -11,6 +11,10 @@ add_library(cudathreebody STATIC libcudathreebody.h libcudathreebody.cu
                                  internal.h simulate.cu)
 target_link_libraries(cudathreebody PUBLIC threebody)
 
+if(NOT ${tb_build_examples})
+  return()
+endif()
+
 find_package(OpenMP REQUIRED)
 
 add_executable(test_cutb test_cutb.cpp)
