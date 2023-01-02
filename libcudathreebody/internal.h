@@ -42,6 +42,9 @@ void __device__ rk4_2(const state_t &y_n, const mass_t mass, const double step,
                       state_t *const y_n1,
                       const Eigen::Array33d &acclerate_of_y_n) noexcept;
 
+void __global__ simulate_10(const input_t *const inputs,
+                            const compute_options opt, result_t *const results);
+
 }  // namespace libcudathreebody
 
 #endif  // THREEBODYFRACTAL3_LIBCUDATHREEBODY_INTERNAL_H

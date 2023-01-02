@@ -180,12 +180,12 @@ void libthreebody::rk4(const state_t &y_n, const mass_t &mass,
   k4.position = y_n.velocity + step * k3.velocity;
   compute_acclerate(y_n.position + step * k3.position, mass, &k4.velocity);
 
-  y_n1->position = y_n.position + step / 6.0 *
-                                      (1 * k1.position + 2 * k2.position +
-                                       2 * k3.position + 1 * k4.position);
-  y_n1->velocity = y_n.velocity + step / 6.0 *
-                                      (1 * k1.velocity + 2 * k2.velocity +
-                                       2 * k3.velocity + 1 * k4.velocity);
+  const double *y_nd = y_n.data(), *k1d = k1.data(), *k2d = k2.data(),
+               *k3d = k3.data(), *k4d = k4.data();
+
+  double *y_n1d = y_n1->data();
+
+  rk4_update_state_fma(step, y_nd, k1d, k2d, k3d, k4d, y_n1d);
 }
 
 inline Eigen::Array33d rk4_update_position(

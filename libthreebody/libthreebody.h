@@ -10,6 +10,12 @@
 
 #include "compile_time_pow.h"
 
+#ifdef __CUDA_ARCH__
+#define LIBTHREEBODY_HOST_DEVICE_FUN __device__ __host__
+#else
+#define LIBTHREEBODY_HOST_DEVICE_FUN
+#endif
+
 namespace libthreebody {
 
 constexpr double G = 6.67259e-11;
@@ -28,10 +34,16 @@ struct alignas(32) state_t {
   Eigen::Array33d position;
   Eigen::Array33d velocity;
 
-  inline double *data() noexcept { return this->position.data(); }
-  inline const double *data() const noexcept { return this->position.data(); }
+  LIBTHREEBODY_HOST_DEVICE_FUN inline double *data() noexcept {
+    return this->position.data();
+  }
+  LIBTHREEBODY_HOST_DEVICE_FUN inline const double *data() const noexcept {
+    return this->position.data();
+  }
 
-  constexpr inline int size() const noexcept { return 18; }
+  LIBTHREEBODY_HOST_DEVICE_FUN constexpr inline int size() const noexcept {
+    return 18;
+  }
 };
 
 double compute_kinetic(const Eigen::Array33d &velocity,

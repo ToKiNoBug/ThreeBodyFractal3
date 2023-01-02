@@ -9,6 +9,10 @@ enable_language(CUDA)
 
 add_library(cudathreebody STATIC libcudathreebody.h libcudathreebody.cu
                                  internal.h simulate.cu)
+target_link_libraries(cudathreebody PUBLIC threebody)
+
+add_executable(test_cutb test_cutb.cpp)
+target_link_libraries(test_cutb PRIVATE cudathreebody threebody)
 
 # target_include_directories(cudathreebody PUBLIC
 # ${CMAKE_SOURCE_DIR}/libthreebody)
