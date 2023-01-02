@@ -1,6 +1,11 @@
 project(ThreeBodyFractal3 LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.5)
 
+if(EXISTS ${CMAKE_SOURCE_DIR}/compile_commands.json)
+  message(STATUS removed)
+  file(REMOVE ${CMAKE_SOURCE_DIR}/compile_commands.json)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   if(NOT DEFINED threebodyfractal_eigen_include_dir)
     set(threebodyfractal_eigen_include_dir "D:/CppLibs/eigen-3.4.0")
@@ -23,5 +28,6 @@ include(cmake/add_compiler_path_to_prefix.cmake)
 # add_compile_definitions("_USE_MATH_DEFINES")
 add_subdirectory(libthreebody)
 add_subdirectory(libthreebodyfractal)
+add_subdirectory(libcudathreebody)
 
 # add_subdirectory(old)
