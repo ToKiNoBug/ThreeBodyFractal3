@@ -6,6 +6,9 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/compile_commands.json)
   file(REMOVE ${CMAKE_SOURCE_DIR}/compile_commands.json)
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   if(NOT DEFINED threebodyfractal_eigen_include_dir)
     set(threebodyfractal_eigen_include_dir "D:/CppLibs/eigen-3.4.0")
@@ -29,7 +32,6 @@ endif()
 
 # set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pg)
 # add_compile_definitions("_USE_MATH_DEFINES")
-
 add_subdirectory(libthreebody)
 add_subdirectory(libthreebodyfractal)
 add_subdirectory(libcudathreebody)

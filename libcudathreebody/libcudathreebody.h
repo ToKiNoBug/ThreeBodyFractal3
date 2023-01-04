@@ -5,6 +5,8 @@
 
 namespace libcudathreebody {
 
+bool is_device_ok(int *errorcode = nullptr) noexcept;
+
 void *allocate_device_memory(size_t bytes, int *errorcode = nullptr) noexcept;
 
 bool free_device_memory(void *device_ptr, int *errorcode = nullptr) noexcept;
@@ -23,6 +25,6 @@ bool run_cuda_simulations(const libthreebody::input_t *const inputs_host,
                           size_t num, libthreebody::compute_options &opt,
                           int *errorcode = nullptr);
 
-}  // namespace libcudathreebody
+} // namespace libcudathreebody
 
-#endif  // THREEBODYFRACTAL3_LIBCUDATHREEBODY_H
+#endif // THREEBODYFRACTAL3_LIBCUDATHREEBODY_H

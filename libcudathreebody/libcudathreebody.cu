@@ -4,6 +4,21 @@
 
 #include "internal.h"
 
+bool libcudathreebody::is_device_ok(int *errorcode) noexcept {
+  int num = 0;
+  cudaError_t ce = cudaGetDeviceCount(&num);
+
+  if (errorcode != nullptr) {
+    *errorcode = ce;
+  }
+
+  if (num <= 0 || ce != cudaError_t::cudaSuccess) {
+    return false;
+  }
+
+  return true;
+}
+
 void *libcudathreebody::allocate_device_memory(size_t bytes,
                                                int *errorcode) noexcept {
   void *dptr = nullptr;

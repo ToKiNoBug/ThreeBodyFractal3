@@ -2,7 +2,7 @@
 
 # list(APPEND CMAKE_PREFIX_PATH "D:/Git/build-FractalUtils-win/install")
 
-set(version_fu 1.0.7)
+set(version_fu 1.1.0)
 
 find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils)
 
@@ -29,6 +29,7 @@ message(STATUS "CMake is configuring fractal_utils ...")
 
 message(STATUS "CMAKE_GENERATOR = " ${CMAKE_GENERATOR})
 message(STATUS "CMAKE_MAKE_PROGRAM = " ${CMAKE_MAKE_PROGRAM})
+message(STATUS "CMAKE_RC_COMPILER = " ${CMAKE_RC_COMPILER})
 
 # return()
 # set(command_temp "cmake -G ${CMAKE_GENERATOR} -S ${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils -B ${CMAKE_BINARY_DIR}/3rdParty/FractalUtils/build -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/3rdParty/FractalUtils/install -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
@@ -38,8 +39,26 @@ set(fu_build_dir ${CMAKE_BINARY_DIR}/3rdParty/FractalUtils/build)
 
 set(fu_install_dir ${CMAKE_BINARY_DIR}/3rdParty/FractalUtils/install)
 
+set(command_args
+    -G ${CMAKE_GENERATOR}
+    -S "${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils"
+    -B "${fu_build_dir}"
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
+    "-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_INSTALL_PREFIX:PATH=${fu_install_dir}"
+    "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
+
+if((CMAKE_CXX_COMPILER_ID STREQUAL MSVC) OR(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL MSVC))
+    if(DEFINED CMAKE_RC_COMPILER)
+        set(command_args ${command_args} "-DCMAKE_RC_COMPILER:FILEPATH=${CMAKE_RC_COMPILER}")
+    endif()
+endif()
+
+message(STATUS "The command is : cmake" ${command_args})
+
 execute_process(
-    COMMAND cmake -G ${CMAKE_GENERATOR} -S ${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils -B ${fu_build_dir} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_INSTALL_PREFIX:PATH=${fu_install_dir} -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+    COMMAND cmake ${command_args}
 
     COMMAND_ERROR_IS_FATAL ANY)
 

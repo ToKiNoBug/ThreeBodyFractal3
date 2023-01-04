@@ -1,22 +1,32 @@
 #ifndef THREEBODYFRACTAL3_COMPILE_TIME_POW_H
 #define THREEBODYFRACTAL3_COMPILE_TIME_POW_H
-#include <cmath>
+
 namespace libthreebody {
 namespace internal {
+
+constexpr double abs(double x) {
+  if (x >= 0) {
+    return x;
+  } else {
+    return -x;
+  }
+}
+
 constexpr double inv_cubic(double A) {
   double x = A;
 
-  double prev_x = x * -1;
+  double prev_x = -x;
 
   while (true) {
-    if (std::abs((prev_x - x) / x) < 1e-60) break;
+    if (prev_x == x)
+      break;
     prev_x = x;
     x -= (x * x * x - A) / (3 * x * x);
   }
 
   return x;
 }
-}  // namespace internal
-}  // namespace libthreebody
+} // namespace internal
+} // namespace libthreebody
 
-#endif  // THREEBODYFRACTAL3_COMPILE_TIME_POW_H
+#endif // THREEBODYFRACTAL3_COMPILE_TIME_POW_H
