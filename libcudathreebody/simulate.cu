@@ -218,6 +218,7 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
   // constexpr uint32_t terminate_flag = 0b1111111111;
 
   if (threadIdx.x == 0) {
+    terminate_counter = 0;
 
     // will_go_on = 0;
   }
@@ -259,20 +260,11 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
         goon = false;
       }
 
+      bool add_counter = (goon == false) && (terminate[task_offset] == false);
+
       terminate[task_offset] = terminate[task_offset] || !goon;
 
-      // const uint32_t temp = (goon) ? (0UL) : (mask);
-
-      // atomicOr(&will_go_on, temp);
-    }
-
-    __syncthreads();
-    if (threadIdx.x == 0) {
-      terminate_counter = 0;
-
-      for (int i = 0; i < 10; i++) {
-        terminate_counter += terminate[i];
-      }
+      atomicAdd(&terminate_counter, int(add_counter));
     }
 
     __syncthreads();
@@ -280,11 +272,6 @@ void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
     if (terminate_counter >= 10) {
       break;
     }
-    /*
-    if (will_go_on == terminate_flag) {
-      break;
-    }
-    */
 
     // execute by each thread
     {

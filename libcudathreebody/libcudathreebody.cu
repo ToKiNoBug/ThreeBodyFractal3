@@ -85,13 +85,13 @@ bool libcudathreebody::wait_for_device(int *errorcode) noexcept {
 bool libcudathreebody::run_cuda_simulations(
     const libthreebody::input_t *const inputs_host,
     libthreebody::result_t *const dest_host, void *buffer_input_device,
-    void *buffer_result_device, size_t num, libthreebody::compute_options &opt,
-    int *errorcode) {
+    void *buffer_result_device, size_t num,
+    const libthreebody::compute_options &opt, int *errorcode) {
   cudaError_t ce;
 
   const int num_run_10 = 10 * ((num) / 10);
 
-  printf("num_run_10 = %i\n", num_run_10);
+  // printf("num_run_10 = %i\n", num_run_10);
 
   if (num_run_10 > 0) {
     ce = cudaMemcpy(buffer_input_device, inputs_host,
@@ -106,8 +106,9 @@ bool libcudathreebody::run_cuda_simulations(
     libcudathreebody::simulate_10<<<num_run_10 / 10, 30>>>(
         (const input_t *)buffer_input_device, opt,
         (result_t *)buffer_result_device);
-    printf("%i tasks added to gpu by %i blocks.\n", num_run_10,
-           num_run_10 / 10);
+    /*
+printf("%i tasks added to gpu by %i blocks.\n", num_run_10,
+       num_run_10 / 10);*/
   }
 
   for (int i = num_run_10; i < num; i++) {
@@ -120,7 +121,7 @@ bool libcudathreebody::run_cuda_simulations(
 
     ce = cudaMemcpy(dest_host, buffer_result_device,
                     sizeof(result_t) * num_run_10, cudaMemcpyDeviceToHost);
-    printf("GPU finished %i tasks.\n", num_run_10);
+    // printf("GPU finished %i tasks.\n", num_run_10);
   }
 
   if (ce != cudaError_t::cudaSuccess) {
