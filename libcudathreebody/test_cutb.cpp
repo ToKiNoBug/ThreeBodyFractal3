@@ -12,7 +12,7 @@ int main(int argC, char **argV) {
     }
   }
   using namespace libthreebody;
-  const int num = 10000;
+  const int num = 1000;
   input_t *const inputs = new input_t[num];
   result_t *const results = new result_t[num];
 
@@ -71,7 +71,7 @@ int main(int argC, char **argV) {
   */
 
   printf("iterate times and fail times : [");
-  for (int idx = 0; idx < num; idx++) {
+  for (int idx = 0; idx < 10; idx++) {
     printf("(%i, %i), ", results[idx].iterate_times,
            results[idx].fail_search_times);
   }

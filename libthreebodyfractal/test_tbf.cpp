@@ -18,7 +18,8 @@ int main(int argC, char **argV) {
   fractal_map map_result =
       fractal_map::create(rows, cols, sizeof(libthreebody::result_t));
 
-  omp_set_num_threads(std::thread::hardware_concurrency());
+  libthreebody::gpu_mem_allocator allocator(2, cols);
+  omp_set_num_threads(std::thread::hardware_concurrency() + allocator.size());
 
   center_wind<double> wind;
 
@@ -47,7 +48,7 @@ int main(int argC, char **argV) {
 
   double wtime;
   wtime = omp_get_wtime();
-  compute_frame(input, wind, opt, &map_result);
+  compute_frame_cpu_and_gpu(input, wind, opt, &map_result, &allocator);
   wtime = omp_get_wtime() - wtime;
 
   printf("%i simulations finished in %F seconds. %F ms per simulation.\n",

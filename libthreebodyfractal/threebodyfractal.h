@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "libthreebody.h"
+#include "memory_resource.h"
 
 namespace libthreebody {
 
@@ -18,6 +19,13 @@ void compute_frame(const input_t &center_input,
                    const compute_options &opt,
                    fractal_utils::fractal_map *const dest_result,
                    bool display_progress = true) noexcept;
+
+void compute_frame_cpu_and_gpu(const input_t &center_input,
+                               const fractal_utils::center_wind<double> &wind,
+                               const compute_options &opt,
+                               fractal_utils::fractal_map *const dest_result,
+                               gpu_mem_allocator *const allocator,
+                               bool display_progress = true) noexcept;
 
 enum fractal_binfile_tag : int64_t {
   basical_information = 1,
@@ -48,6 +56,6 @@ bool fractal_bin_file_get_end_state(
     fractal_utils::fractal_map *const end_state_dest,
     const bool examine_map_size = false) noexcept;
 
-} // namespace libthreebody
+}  // namespace libthreebody
 
-#endif // THREEBODYFRACTAL3_THREEBODYFRACTAL_H
+#endif  // THREEBODYFRACTAL3_THREEBODYFRACTAL_H
