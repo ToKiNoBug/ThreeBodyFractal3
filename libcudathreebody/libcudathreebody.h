@@ -23,7 +23,7 @@ bool run_cuda_simulations(const libthreebody::input_t *const inputs_host,
                           libthreebody::result_t *const dest_host,
                           void *buffer_input_device, void *buffer_result_device,
                           size_t num, const libthreebody::compute_options &opt,
-                          int *errorcode = nullptr);
+                          int *errorcode = nullptr) noexcept;
 
 }  // namespace libcudathreebody
 

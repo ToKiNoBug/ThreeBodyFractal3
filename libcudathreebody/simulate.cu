@@ -38,7 +38,7 @@ void __device__ libcudathreebody::compute_acclerate(
       }
 
       const double distanceSquare = temp;
-      const double distance = std::sqrt(distanceSquare);
+      const double distance = sqrt(distanceSquare);
 
       for (int r = 0; r < 3; r++) {
         xj_sub_xi[r] *= G / (distanceSquare * distance);
@@ -67,7 +67,7 @@ void __device__ libcudathreebody::compute_potential_acclerate(
 
       // auto xj_sub_xi = x.col(j) - x.col(i);
       const double distanceSquare = temp;
-      const double distance = std::sqrt(distanceSquare);
+      const double distance = sqrt(distanceSquare);
 
       for (int r = 0; r < 3; r++) {
         xj_sub_xi[r] *= G / (distanceSquare * distance);
@@ -93,13 +93,14 @@ void __device__ libcudathreebody::compute_potential_acclerate(
   *potential = pot;
 }
 
-void __device__ rk4_update_state(double step, const double *y_nd,
-                                 const double *k1d, const double *k2d,
-                                 const double *k3d, const double *k4d,
-                                 double *y_n1d) {
+void __device__ libcudathreebody::rk4_update_state(
+    double step, const double *y_nd, const double *k1d, const double *k2d,
+    const double *k3d, const double *k4d, double *y_n1d) noexcept {
+  step /= 6;
   for (int idx = 0; idx < 18; idx++) {
-    y_n1d[idx] = y_nd[idx] +
-                 step / 6 * (k1d[idx] + 2 * k2d[idx] + 2 * k3d[idx] + k4d[idx]);
+    const double temp =
+        __fma_rn(2, k2d[idx], k1d[idx]) + __fma_rn(2, k3d[idx], k4d[idx]);
+    y_n1d[idx] = __fma_rn(step, temp, y_nd[idx]);
   }
 }
 
@@ -112,7 +113,8 @@ rk4_update_position(const Eigen::Array33d &y_n_pos, const double __time_step,
   const double *const p_k_pos = k_pos.data();
 
   for (int idx = 0; idx < 9; idx++) {
-    ret(idx) = y_n_pos(idx) + __time_step * k_pos(idx);
+    // ret(idx) = y_n_pos(idx) + __time_step * k_pos(idx);
+    ret(idx) = __fma_rn(__time_step, k_pos(idx), y_n_pos(idx));
   }
 
   // ret(idx) = y_n_pos(idx) + __time_step * k_pos(idx);
@@ -178,172 +180,55 @@ void __device__ libcudathreebody::rk4_2(
   rk4_update_state(step, y_nd, k1d, k2d, k3d, k4d, y_n1d);
 }
 
-void __global__ libcudathreebody::simulate_10(const input_t *const inputs,
-                                              const compute_options opt,
-                                              result_t *const results) {
+#include "libcudathreebody.h"
 
-  if (blockDim.x != 30) {
-    return;
-  }
+bool libcudathreebody::run_cuda_simulations(
+    const libthreebody::input_t *const inputs_host,
+    libthreebody::result_t *const dest_host, void *buffer_input_device,
+    void *buffer_result_device, size_t num,
+    const libthreebody::compute_options &opt, int *errorcode) noexcept {
+  cudaError_t ce;
 
-  const int task_offset = threadIdx.x / 3;
-  const int thread_offset = threadIdx.x % 3;
-  const int global_task_idx = blockIdx.x * 10 + task_offset;
-  const bool is_control_thread = (thread_offset == 0);
+  constexpr int tasks_per_block = 42;
 
-  __shared__ mass_t mass[10];
-  __shared__ int iterate_times[10];
-  __shared__ int fail_iterate_times[10];
+  const int num_run_gpu = tasks_per_block * ((num) / tasks_per_block);
 
-  __shared__ double center_step[10];
-  __shared__ state_t y[10];
-  __shared__ Eigen::Array33d acclerate_of_y[10];
-  __shared__ double energy_of_y[10];
-  __shared__ double time[10];
+  // printf("num_run_gpu = %i\n", num_run_gpu);
 
-  __shared__ bool terminate[10];
-  __shared__ int terminate_counter;
-
-  //__shared__ bool have_output[10];
-
-  // 30
-  __shared__ double step[10][3];
-  __shared__ state_t y_next[10][3];
-  __shared__ Eigen::Array33d acclerate_of_y_next[10][3];
-  __shared__ double energy_of_y_next[10][3];
-  __shared__ bool is_ok[10][3];
-
-  //__shared__ uint32_t will_go_on;
-
-  // constexpr uint32_t terminate_flag = 0b1111111111;
-
-  if (threadIdx.x == 0) {
-    terminate_counter = 0;
-
-    // will_go_on = 0;
-  }
-
-  const uint32_t mask = (1ULL << task_offset);
-
-  // initialize
-  if (is_control_thread) {
-    time[task_offset] = 0;
-    mass[task_offset] = inputs[global_task_idx].mass;
-    y[task_offset] = inputs[global_task_idx].beg_state;
-    iterate_times[task_offset] = 0;
-    fail_iterate_times[task_offset] = 0;
-    center_step[task_offset] = opt.step_guess;
-
-    compute_potential_acclerate(y[task_offset].position, mass[task_offset],
-                                energy_of_y + task_offset,
-                                acclerate_of_y + task_offset);
-
-    energy_of_y[task_offset] +=
-        compute_kinetic(y[task_offset].velocity, mass[task_offset]);
-
-    terminate[task_offset] = false;
-    // have_output[task_offset] = false;
-  }
-
-  __syncthreads();
-
-  while (true) {
-    // update will_go_on
-    if (is_control_thread) {
-      bool goon = true;
-
-      if (center_step[task_offset] <= 1) {
-        goon = false;
+  if (num_run_gpu > 0) {
+    ce = cudaMemcpy(buffer_input_device, inputs_host,
+                    sizeof(input_t) * num_run_gpu, cudaMemcpyHostToDevice);
+    if (ce != cudaError_t::cudaSuccess) {
+      if (errorcode != nullptr) {
+        *errorcode = ce;
       }
-
-      if (time[task_offset] >= opt.time_end) {
-        goon = false;
-      }
-
-      bool add_counter = (goon == false) && (terminate[task_offset] == false);
-
-      terminate[task_offset] = terminate[task_offset] || !goon;
-
-      atomicAdd(&terminate_counter, int(add_counter));
+      return false;
     }
 
-    __syncthreads();
-
-    if (terminate_counter >= 10) {
-      break;
-    }
-
-    // execute by each thread
-    {
-      const double current_max_step = opt.time_end - time[task_offset];
-
-      step[task_offset][thread_offset] =
-          center_step[task_offset] / 2 * (1 << thread_offset);
-      step[task_offset][thread_offset] =
-          min(step[task_offset][thread_offset], current_max_step);
-      is_ok[task_offset][thread_offset] = false;
-
-      libcudathreebody::rk4_2(
-          y[task_offset], mass[task_offset], step[task_offset][thread_offset],
-          &y_next[task_offset][thread_offset], acclerate_of_y[task_offset]);
-      libcudathreebody::compute_potential_acclerate(
-          y_next[task_offset][thread_offset].position, mass[task_offset],
-          &energy_of_y_next[task_offset][thread_offset],
-          &acclerate_of_y_next[task_offset][thread_offset]);
-      energy_of_y_next[task_offset][thread_offset] +=
-          libcudathreebody::compute_kinetic(
-              y_next[task_offset][thread_offset].velocity, mass[task_offset]);
-
-      is_ok[task_offset][thread_offset] =
-          abs((energy_of_y_next[task_offset][thread_offset] -
-               energy_of_y[task_offset]) /
-              energy_of_y[task_offset]) <= opt.max_relative_error;
-    }
-
-    __syncthreads();
-
-    if (is_control_thread) {
-      int accept_idx = -1;
-      for (int idx = 0; idx < 3; idx++) {
-        if (is_ok[task_offset][idx]) {
-          accept_idx = idx;
-        }
-      }
-
-      // const bool accept_result = (accept_idx >= 0) && (will_go_on & mask);
-      const bool accept_result = (accept_idx >= 0) && (!terminate[task_offset]);
-
-      if (accept_idx < 0) {
-        center_step[task_offset] = step[task_offset][0] / 4;
-        fail_iterate_times[task_offset]++;
-      }
-
-      if (accept_result) {
-        center_step[task_offset] = step[task_offset][accept_idx];
-        energy_of_y[task_offset] = energy_of_y_next[task_offset][accept_idx];
-        energy_of_y[task_offset] = energy_of_y_next[task_offset][accept_idx];
-        acclerate_of_y[task_offset] =
-            acclerate_of_y_next[task_offset][accept_idx];
-        y[task_offset] = y_next[task_offset][accept_idx];
-
-        time[task_offset] += step[task_offset][accept_idx];
-
-        iterate_times[task_offset]++;
-      }
-    }
-
-    __syncthreads();
-    //
+    libcudathreebody::simulate_N<tasks_per_block>
+        <<<num_run_gpu / tasks_per_block, 3 * tasks_per_block>>>(
+            (const input_t *)buffer_input_device, opt,
+            (result_t *)buffer_result_device);
   }
 
-  __syncthreads();
-
-  if (is_control_thread) {
-    results[global_task_idx].end_time = time[task_offset];
-    results[global_task_idx].end_energy = energy_of_y[task_offset];
-    results[global_task_idx].end_state = y[task_offset];
-    results[global_task_idx].fail_search_times =
-        fail_iterate_times[task_offset];
-    results[global_task_idx].iterate_times = iterate_times[task_offset];
+  for (int i = num_run_gpu; i < num; i++) {
+    libthreebody::simulate_2(inputs_host[i], opt, &dest_host[i]);
   }
+
+  if (num_run_gpu > 0) {
+
+    cudaDeviceSynchronize();
+
+    ce = cudaMemcpy(dest_host, buffer_result_device,
+                    sizeof(result_t) * num_run_gpu, cudaMemcpyDeviceToHost);
+    // printf("GPU finished %i tasks.\n", num_run_gpu);
+  }
+
+  if (ce != cudaError_t::cudaSuccess) {
+    if (errorcode != nullptr) {
+      *errorcode = ce;
+    }
+    return false;
+  }
+  return true;
 }
