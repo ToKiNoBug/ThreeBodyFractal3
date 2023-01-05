@@ -1,8 +1,13 @@
 project(ThreeBodyFractal3_libthreebodyfractal LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_STANDARD 23)
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES native)
+endif()
 
+enable_language(CUDA)
+
+set(CMAKE_CXX_STANDARD 23)
 find_package(OpenMP REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
@@ -10,12 +15,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
 
 find_package(PNG REQUIRED)
 
-list(
-  APPEND
-  CMAKE_PREFIX_PATH
-  "/media/jeremiah/D/Git/build-ThreeBodyFractal3-linux/3rdParty/FractalUtils/install"
-)
-
+# list( APPEND CMAKE_PREFIX_PATH
+# "/media/jeremiah/D/Git/build-ThreeBodyFractal3-linux/3rdParty/FractalUtils/install"
+# )
 find_package(
   fractal_utils ${version_fu}
   COMPONENTS core_utils png_utils
@@ -23,8 +25,10 @@ find_package(
 
 find_package(LibLZMA REQUIRED)
 
-add_library(threebodyfractal STATIC threebodyfractal.h threebodyfractal.cpp
-                                    save_binfile.cpp load_binfile.cpp)
+add_library(
+  threebodyfractal STATIC
+  threebodyfractal.h threebodyfractal.cpp save_binfile.cpp load_binfile.cpp
+  memory_resource.h memory_resource.cpp)
 
 include_directories(
   ${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody
@@ -34,8 +38,9 @@ set(tbf_dependents threebody PNG::PNG fractal_utils::core_utils
                    fractal_utils::png_utils OpenMP::OpenMP_CXX LibLZMA::LibLZMA)
 
 target_link_libraries(
-  threebodyfractal PUBLIC OpenMP::OpenMP_CXX threebody PNG::PNG
-                          fractal_utils::core_utils fractal_utils::png_utils)
+  threebodyfractal
+  PUBLIC OpenMP::OpenMP_CXX threebody PNG::PNG fractal_utils::core_utils
+         fractal_utils::png_utils cudathreebody)
 
 find_package(Boost COMPONENTS container)
 
@@ -54,15 +59,23 @@ endif()
 include(${CMAKE_SOURCE_DIR}/cmake/get_lto_options.cmake)
 
 add_executable(test_tbf test_tbf.cpp)
-target_link_libraries(test_tbf PUBLIC threebodyfractal ${tbf_dependents})
+target_link_libraries(test_tbf PUBLIC threebodyfractal ${tbf_dependents}
+                                      cudathreebody)
 target_compile_options(test_tbf PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_load test_tbf2.cpp)
-target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents})
+target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents}
+                                           cudathreebody)
 target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_other_input test_tbf_other_input.cpp)
-target_link_libraries(test_tbf_other_input PUBLIC threebodyfractal
-                                                  ${tbf_dependents})
+target_link_libraries(test_tbf_other_input
+                      PUBLIC threebodyfractal ${tbf_dependents} cudathreebody)
 target_compile_options(test_tbf_other_input
+                       PRIVATE ${ThreebodyFractal_lto_options})
+
+add_executable(test_tbf_allocator test_allocator.cpp)
+target_link_libraries(test_tbf_allocator PUBLIC threebodyfractal
+                                                ${tbf_dependents} cudathreebody)
+target_compile_options(test_tbf_allocator
                        PRIVATE ${ThreebodyFractal_lto_options})
