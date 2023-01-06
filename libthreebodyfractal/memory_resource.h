@@ -25,7 +25,7 @@ class gpu_mem_allocator {
  public:
   gpu_mem_allocator() = delete;
   gpu_mem_allocator(const gpu_mem_allocator &) = delete;
-  gpu_mem_allocator(gpu_mem_allocator &&) = delete;
+  gpu_mem_allocator(gpu_mem_allocator &&) = default;
 
   gpu_mem_allocator(int gpu_resource_count, int cols);
 

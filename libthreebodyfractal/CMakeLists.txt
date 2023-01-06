@@ -30,9 +30,10 @@ add_library(
   libthreebodyfractal.h libthreebodyfractal.cpp save_binfile.cpp
   load_binfile.cpp memory_resource.h memory_resource.cpp)
 
-include_directories(
-  ${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody
-  ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir})
+target_include_directories(
+  threebodyfractal
+  PUBLIC ${CMAKE_SOURCE_DIR}/libthreebody ${fractal_utils_INCLUDE_DIR}
+         ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir})
 
 target_link_libraries(
   threebodyfractal
