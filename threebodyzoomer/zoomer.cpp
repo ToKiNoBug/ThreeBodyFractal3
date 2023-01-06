@@ -20,6 +20,7 @@ struct custom_parameters {
   libthreebody::input_t center_input;
   libthreebody::compute_options opt;
   fractal_utils::fractal_map buffer_float32;
+  void *buffer_export;
 };
 
 void compute_fun(const fractal_utils::wind_base &, void *custom_ptr,
@@ -29,6 +30,11 @@ void render_fun_end_age_only(
     const fractal_utils::fractal_map &map_fractal,
     const fractal_utils::wind_base &window, void *custom_ptr,
     fractal_utils::fractal_map *map_u8c3_do_not_resize);
+
+bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
+                     const fractal_utils::wind_base &window, void *custom_ptr,
+                     const fractal_utils::fractal_map &map_u8c3_do_not_resize,
+                     const char *filename);
 
 int main(int argc, char **argV) {
   QApplication app(argc, argV);
@@ -50,11 +56,22 @@ int main(int argc, char **argV) {
     w.set_window(wind);
   }
 
-  custom_parameters custp{gpu_mem_allocator(1, cols), input_t(),
-                          compute_options(),
-                          fractal_map::create(rows, cols, sizeof(float))};
+  custom_parameters custp{
+      gpu_mem_allocator(1, cols), input_t(), compute_options(),
+      fractal_map::create(rows, cols, sizeof(float)), nullptr};
 
   printf("size of cutp.alloc.size = %i\n", custp.alloc.size());
+  {
+#ifdef WIN32
+    void *const buffer =
+        _aligned_malloc(sizeof(result_t) * rows * cols * 2.5, 32);
+#else
+    void *const buffer =
+        aligned_alloc(32, sizeof(result_t) * rows * cols * 2.5);
+#endif
+
+    custp.buffer_export = buffer;
+  }
 
   omp_set_num_teams(std::thread::hardware_concurrency() + custp.alloc.size());
 
@@ -69,14 +86,17 @@ int main(int argc, char **argV) {
   w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
   w.callback_compute_fun = compute_fun;
   w.callback_render_fun = render_fun_end_age_only;
-  w.callback_export_fun;
+  w.callback_export_fun = export_bin_file;
 
   w.show();
 
   w.display_range();
   // w.compute_and_paint();
+  int ret = app.exec();
 
-  return app.exec();
+  free(custp.buffer_export);
+
+  return ret;
 }
 
 std::array<int, 2> get_map_size(int argc,
@@ -131,14 +151,28 @@ libthreebody::input_t get_center_input(int argc,
 
   std::filesystem::path src_filename = argv[3];
 
-  if (src_filename.extension() != ".paraD3B3") {
+  const bool is_paraD3B3 = (src_filename.extension() == ".paraD3B3");
+  const bool is_tbf = (src_filename.extension() == ".tbf");
+
+  if (!is_paraD3B3 && !is_tbf) {
     printf("\nError : invalid extension for src_filename.\n");
     exit(1);
     return {};
   }
+
   bool ok = true;
-  ok = load_parameters_from_D3B3(src_filename.c_str(), &input.mass,
-                                 &input.beg_state);
+  if (is_paraD3B3) {
+    ok = load_parameters_from_D3B3(src_filename.c_str(), &input.mass,
+                                   &input.beg_state);
+  }
+
+  if (is_tbf) {
+    fractal_utils::binfile binfile;
+    binfile.parse_from_file(src_filename.c_str());
+
+    ok = libthreebody::fractal_bin_file_get_information(binfile, nullptr,
+                                                        nullptr, &input);
+  }
 
   if (!ok) {
     printf("\nError : failed to load parameters from file %s.\n",
@@ -157,9 +191,14 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
 
   custom_parameters *const params =
       reinterpret_cast<custom_parameters *>(custom_ptr);
-
+  double wtime = omp_get_wtime();
   libthreebody::compute_frame_cpu_and_gpu(
       params->center_input, wind, params->opt, map_fractal, &params->alloc);
+  wtime = omp_get_wtime() - wtime;
+
+  printf("%zu computations finished in %F seconds. %F ms per simulation.\n",
+         map_fractal->element_count(), wtime,
+         1000 * wtime / map_fractal->element_count());
 }
 
 void render_fun_end_age_only(const fractal_utils::fractal_map &map_fractal,
@@ -179,12 +218,26 @@ void render_fun_end_age_only(const fractal_utils::fractal_map &map_fractal,
   for (int r = 0; r < map_fractal.rows; r++) {
     for (int c = 0; c < map_fractal.cols; c++) {
       params->buffer_float32.at<float>(r, c) =
-          float(map_fractal.at<result_t>(r, c).end_time) / max_time;
+          1.0f - float(map_fractal.at<result_t>(r, c).end_time) / max_time;
     }
 
     fractal_utils::color_u8c3_many(
         &params->buffer_float32.at<float>(r, 0),
-        fractal_utils::color_series::hsv, map_fractal.cols,
+        fractal_utils::color_series::parula, map_fractal.cols,
         &map_u8c3->at<fractal_utils::pixel_RGB>(r, 0));
   }
+}
+
+bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
+                     const fractal_utils::wind_base &__wind, void *custom_ptr,
+                     const fractal_utils::fractal_map &map_u8c3_do_not_resize,
+                     const char *filename) {
+  const fractal_utils::center_wind<double> &wind =
+      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  custom_parameters *const params =
+      reinterpret_cast<custom_parameters *>(custom_ptr);
+
+  return libthreebody::save_fractal_bin_file(
+      filename, params->center_input, wind, params->opt, map_fractal,
+      params->buffer_export, 2.5 * map_fractal.byte_count());
 }
