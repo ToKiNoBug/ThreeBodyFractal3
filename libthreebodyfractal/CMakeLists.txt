@@ -27,20 +27,22 @@ find_package(LibLZMA REQUIRED)
 
 add_library(
   threebodyfractal STATIC
-  threebodyfractal.h threebodyfractal.cpp save_binfile.cpp load_binfile.cpp
-  memory_resource.h memory_resource.cpp)
+  libthreebodyfractal.h libthreebodyfractal.cpp save_binfile.cpp
+  load_binfile.cpp memory_resource.h memory_resource.cpp)
 
 include_directories(
   ${fractal_utils_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/libthreebody
   ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir})
 
-set(tbf_dependents threebody PNG::PNG fractal_utils::core_utils
-                   fractal_utils::png_utils OpenMP::OpenMP_CXX LibLZMA::LibLZMA)
-
 target_link_libraries(
   threebodyfractal
-  PUBLIC OpenMP::OpenMP_CXX threebody PNG::PNG fractal_utils::core_utils
-         fractal_utils::png_utils cudathreebody)
+  PUBLIC OpenMP::OpenMP_CXX
+         threebody
+         PNG::PNG
+         fractal_utils::core_utils
+         fractal_utils::png_utils
+         cudathreebody
+         LibLZMA::LibLZMA)
 
 find_package(Boost COMPONENTS container)
 
@@ -59,23 +61,19 @@ endif()
 include(${CMAKE_SOURCE_DIR}/cmake/get_lto_options.cmake)
 
 add_executable(test_tbf test_tbf.cpp)
-target_link_libraries(test_tbf PUBLIC threebodyfractal ${tbf_dependents}
-                                      cudathreebody)
+target_link_libraries(test_tbf PRIVATE threebodyfractal)
 target_compile_options(test_tbf PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_load test_tbf2.cpp)
-target_link_libraries(test_tbf_load PUBLIC threebodyfractal ${tbf_dependents}
-                                           cudathreebody)
+target_link_libraries(test_tbf_load PRIVATE threebodyfractal)
 target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_other_input test_tbf_other_input.cpp)
-target_link_libraries(test_tbf_other_input
-                      PUBLIC threebodyfractal ${tbf_dependents} cudathreebody)
+target_link_libraries(test_tbf_other_input PRIVATE threebodyfractal)
 target_compile_options(test_tbf_other_input
                        PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_allocator test_allocator.cpp)
-target_link_libraries(test_tbf_allocator PUBLIC threebodyfractal
-                                                ${tbf_dependents} cudathreebody)
+target_link_libraries(test_tbf_allocator PRIVATE threebodyfractal)
 target_compile_options(test_tbf_allocator
                        PRIVATE ${ThreebodyFractal_lto_options})

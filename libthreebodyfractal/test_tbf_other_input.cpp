@@ -7,7 +7,7 @@
 #include <memory>
 #include <thread>
 
-#include "threebodyfractal.h"
+#include "libthreebodyfractal.h"
 
 int main(int argC, char **argV) {
   using namespace libthreebody;
@@ -43,8 +43,8 @@ int main(int argC, char **argV) {
 
   center_wind<double> wind;
 
-  wind.center = {0, 0};
-  wind.y_span = 2;
+  wind.center = {-1, 0};
+  wind.y_span = 4;
   wind.x_span = wind.y_span / map_result.rows * map_result.cols;
 
   double wtime;

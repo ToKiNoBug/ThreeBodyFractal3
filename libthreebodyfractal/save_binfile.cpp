@@ -2,10 +2,9 @@
 #include <stdio.h>
 
 #include <map>
-
 #include <nbt.hpp>
 
-#include "threebodyfractal.h"
+#include "libthreebodyfractal.h"
 
 bool xz_compress(uint8_t *const dest, const uint8_t *const src,
                  const uint64_t src_bytes, const uint64_t dest_capacity,
@@ -53,8 +52,9 @@ bool libthreebody::save_fractal_bin_file(
   using namespace fractal_utils;
 
   if (buffer_bytes < mat_result.byte_count() * 2) {
-    printf("\nError : not enough buffer. The buffer should be at least 2 time "
-           "bigger than the mat_result.\n");
+    printf(
+        "\nError : not enough buffer. The buffer should be at least 2 time "
+        "bigger than the mat_result.\n");
     return false;
   }
 
@@ -89,7 +89,6 @@ bool libthreebody::save_fractal_bin_file(
   if (!fractal_bin_file_write_basical_information(
           fp, buffer_A, buffer_A_capacity, buffer_B, buffer_B_capacity,
           center_input, wind, opt, mat_result)) {
-
     printf("\nFailed to write basical_information.\n");
     return false;
   }

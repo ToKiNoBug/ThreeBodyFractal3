@@ -21,8 +21,8 @@ endif()
 find_package(OpenMP REQUIRED)
 
 add_executable(test_cutb test_cutb.cpp)
-target_link_libraries(test_cutb PRIVATE cudathreebody threebody
-                                        OpenMP::OpenMP_CXX)
+target_link_libraries(test_cutb PUBLIC cudathreebody threebody
+                                       OpenMP::OpenMP_CXX)
 
 # target_include_directories(cudathreebody PUBLIC
 # ${CMAKE_SOURCE_DIR}/libthreebody)

@@ -35,5 +35,6 @@ endif()
 add_subdirectory(libthreebody)
 add_subdirectory(libthreebodyfractal)
 add_subdirectory(libcudathreebody)
+add_subdirectory(threebodyzoomer)
 
 # add_subdirectory(old)

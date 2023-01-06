@@ -2,23 +2,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "threebodyfractal.h"
-
 #include <map>
-
 #include <nbt.hpp>
 
-const fractal_utils::data_block *
-find_data_block_noduplicate(const fractal_utils::binfile &binfile,
-                            libthreebody::fractal_binfile_tag tag) noexcept {
+#include "libthreebodyfractal.h"
+
+const fractal_utils::data_block *find_data_block_noduplicate(
+    const fractal_utils::binfile &binfile,
+    libthreebody::fractal_binfile_tag tag) noexcept {
   const fractal_utils::data_block *ret = nullptr;
 
   for (const auto &blk : binfile.blocks) {
     if (blk.tag == tag) {
       if (ret != nullptr) {
-        printf("\nError : multiple datablocks have tag %i, which is not "
-               "allowed.\n",
-               int(tag));
+        printf(
+            "\nError : multiple datablocks have tag %i, which is not "
+            "allowed.\n",
+            int(tag));
         return nullptr;
       }
       ret = &blk;
@@ -38,7 +38,6 @@ bool libthreebody::fractal_bin_file_get_information(
     size_t *const cols_dest, input_t *const center_input_dest,
     fractal_utils::center_wind<double> *const wind_dest,
     compute_options *const opt_dest) noexcept {
-
   const fractal_utils::data_block *info_block = nullptr;
   for (const auto &blk : binfile.blocks) {
     if (blk.tag == fractal_binfile_tag::basical_information) {
@@ -54,9 +53,10 @@ bool libthreebody::fractal_bin_file_get_information(
   }
 
   if (info_block == nullptr) {
-    printf("\nError : failed to find any datablock with tag %i "
-           "(basical_information).\n",
-           int(fractal_binfile_tag::basical_information));
+    printf(
+        "\nError : failed to find any datablock with tag %i "
+        "(basical_information).\n",
+        int(fractal_binfile_tag::basical_information));
     return false;
   }
 
@@ -68,8 +68,9 @@ bool libthreebody::fractal_bin_file_get_information(
 
   if (rows_dest != nullptr) {
     if (!info.contains("rows")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"rows\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"rows\" : no such tag.\n");
       return false;
     }
 
@@ -78,8 +79,9 @@ bool libthreebody::fractal_bin_file_get_information(
 
   if (cols_dest != nullptr) {
     if (!info.contains("cols")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"cols\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"cols\" : no such tag.\n");
       return false;
     }
 
@@ -88,8 +90,9 @@ bool libthreebody::fractal_bin_file_get_information(
 
   if (center_input_dest != nullptr) {
     if (!info.contains("center_input")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"center_input\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"center_input\" : no such tag.\n");
       return false;
     }
 
@@ -97,8 +100,9 @@ bool libthreebody::fractal_bin_file_get_information(
         std::get<nbt::TagCompound>(info.at("center_input"));
 
     if (!ci.contains("initial_state")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"center_input/initial_state\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"center_input/initial_state\" : no such tag.\n");
       return false;
     }
     const nbt::TagList &is = std::get<nbt::TagList>(ci.at("initial_state"));
@@ -106,9 +110,10 @@ bool libthreebody::fractal_bin_file_get_information(
         std::get<std::vector<nbt::TagDouble>>(is);
 
     if (isd.size() != 18) {
-      printf("\nError : function fractal_bin_file_get_information failed "
-             "because size of initial_state is not 18 but %i\n",
-             int(isd.size()));
+      printf(
+          "\nError : function fractal_bin_file_get_information failed "
+          "because size of initial_state is not 18 but %i\n",
+          int(isd.size()));
       return false;
     }
 
@@ -118,8 +123,9 @@ bool libthreebody::fractal_bin_file_get_information(
            sizeof(double) * 9);
 
     if (!ci.contains("mass")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"center_input/mass\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"center_input/mass\" : no such tag.\n");
       return false;
     }
     const nbt::TagList &m = std::get<nbt::TagList>(ci.at("mass"));
@@ -127,9 +133,10 @@ bool libthreebody::fractal_bin_file_get_information(
         std::get<std::vector<nbt::TagDouble>>(m);
 
     if (md.size() != 3) {
-      printf("\nError : function fractal_bin_file_get_information failed "
-             "because size of mass is not 3 but %i\n",
-             int(md.size()));
+      printf(
+          "\nError : function fractal_bin_file_get_information failed "
+          "because size of mass is not 3 but %i\n",
+          int(md.size()));
       return false;
     }
 
@@ -138,42 +145,48 @@ bool libthreebody::fractal_bin_file_get_information(
 
   if (wind_dest != nullptr) {
     if (!info.contains("window")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window\" : no such tag.\n");
       return false;
     }
 
     const nbt::TagCompound &w = std::get<nbt::TagCompound>(info.at("window"));
 
     if (!w.contains("x_span")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window/x_span\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window/x_span\" : no such tag.\n");
       return false;
     }
     wind_dest->x_span = std::get<nbt::TagDouble>(w.at("x_span"));
 
     if (!w.contains("y_span")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window/y_span\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window/y_span\" : no such tag.\n");
       return false;
     }
     wind_dest->y_span = std::get<nbt::TagDouble>(w.at("y_span"));
 
     if (!w.contains("center")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window/center\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window/center\" : no such tag.\n");
       return false;
     }
     const nbt::TagCompound &wc = std::get<nbt::TagCompound>(w.at("center"));
     if (!wc.contains("x")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window/center/x\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window/center/x\" : no such tag.\n");
       return false;
     }
     wind_dest->center[0] = std::get<nbt::TagDouble>(wc.at("x"));
     if (!wc.contains("y")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"window/center/y\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"window/center/y\" : no such tag.\n");
       return false;
     }
     wind_dest->center[1] = std::get<nbt::TagDouble>(wc.at("y"));
@@ -181,31 +194,35 @@ bool libthreebody::fractal_bin_file_get_information(
 
   if (opt_dest != nullptr) {
     if (!info.contains("compute_option")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"compute_option\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"compute_option\" : no such tag.\n");
       return false;
     }
     const nbt::TagCompound &co =
         std::get<nbt::TagCompound>(info.at("compute_option"));
 
     if (!co.contains("max_relative_error")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"compute_option/max_relative_error\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"compute_option/max_relative_error\" : no such tag.\n");
       return false;
     }
     opt_dest->max_relative_error =
         std::get<nbt::TagDouble>(co.at("max_relative_error"));
 
     if (!co.contains("step_guess")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"compute_option/step_guess\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"compute_option/step_guess\" : no such tag.\n");
       return false;
     }
     opt_dest->step_guess = std::get<nbt::TagDouble>(co.at("step_guess"));
 
     if (!co.contains("time_end")) {
-      printf("\nError : function fractal_bin_file_get_information failed to "
-             "find tag \"compute_option/time_end\" : no such tag.\n");
+      printf(
+          "\nError : function fractal_bin_file_get_information failed to "
+          "find tag \"compute_option/time_end\" : no such tag.\n");
       return false;
     }
     opt_dest->time_end = std::get<nbt::TagDouble>(co.at("time_end"));
@@ -223,9 +240,10 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
   ret = lzma_stream_decoder(&xzs, UINT64_MAX, LZMA_CONCATENATED);
 
   if (ret != LZMA_OK) {
-    printf("\nError : function xz_decompress failed to initialize decoder "
-           "stream with error code %i.\n",
-           ret);
+    printf(
+        "\nError : function xz_decompress failed to initialize decoder "
+        "stream with error code %i.\n",
+        ret);
     lzma_end(&xzs);
     return false;
   }
@@ -237,9 +255,10 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
 
   ret = lzma_code(&xzs, LZMA_RUN);
   if (ret != LZMA_OK) {
-    printf("\nError : function xz_decompress failed to decode with error code "
-           "%i.\n",
-           ret);
+    printf(
+        "\nError : function xz_decompress failed to decode with error code "
+        "%i.\n",
+        ret);
     lzma_end(&xzs);
     return false;
   }
@@ -247,9 +266,10 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
   ret = lzma_code(&xzs, LZMA_FINISH);
 
   if (ret != LZMA_STREAM_END && ret != LZMA_OK) {
-    printf("\nError : function xz_decompress failed to finish with error code "
-           "%i.\n",
-           ret);
+    printf(
+        "\nError : function xz_decompress failed to finish with error code "
+        "%i.\n",
+        ret);
     lzma_end(&xzs);
     return false;
   }
@@ -263,22 +283,23 @@ bool xz_decompress(const uint8_t *const src, const uint64_t src_bytes,
 
 bool check_information(const fractal_utils::binfile &binfile,
                        const fractal_utils::fractal_map &dest_matrix) noexcept {
-
   size_t rows = 0, cols = 0;
   bool ok =
       libthreebody::fractal_bin_file_get_information(binfile, &rows, &cols);
 
   if (!ok) {
-    printf("\nError : function check_information failed to get "
-           "information.\n");
+    printf(
+        "\nError : function check_information failed to get "
+        "information.\n");
     return false;
   }
 
   if (rows != dest_matrix.rows || cols != dest_matrix.cols) {
-    printf("\nError : function check_information failed. Matrix size mismatch. "
-           "Result from binfile is (%llu,%llu), but size of matrix is "
-           "(%llu,%llu).\n",
-           rows, cols, dest_matrix.rows, dest_matrix.cols);
+    printf(
+        "\nError : function check_information failed. Matrix size mismatch. "
+        "Result from binfile is (%llu,%llu), but size of matrix is "
+        "(%llu,%llu).\n",
+        rows, cols, dest_matrix.rows, dest_matrix.cols);
     return false;
   }
   return true;
@@ -320,10 +341,11 @@ bool libthreebody::fractal_bin_file_get_end_state(
 
   if (decompressed_bytes !=
       end_state_dest->element_count() * sizeof(double) * 18) {
-    printf("\nError : decompressed bytes mismatch. Should be %llu but infact "
-           "it is %llu.\n",
-           end_state_dest->element_count() * sizeof(double) * 18,
-           decompressed_bytes);
+    printf(
+        "\nError : decompressed bytes mismatch. Should be %llu but infact "
+        "it is %llu.\n",
+        end_state_dest->element_count() * sizeof(double) * 18,
+        decompressed_bytes);
     return false;
   }
 

@@ -189,7 +189,7 @@ bool libcudathreebody::run_cuda_simulations(
     const libthreebody::compute_options &opt, int *errorcode) noexcept {
   cudaError_t ce;
 
-  constexpr int tasks_per_block = 42;
+  constexpr int tasks_per_block = 21;
 
   const int num_run_gpu = tasks_per_block * ((num) / tasks_per_block);
 

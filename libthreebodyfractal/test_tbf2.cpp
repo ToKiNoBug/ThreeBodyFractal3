@@ -2,11 +2,7 @@
 #include <omp.h>
 #include <stdlib.h>
 
-#include <cstring>
-#include <memory>
-#include <thread>
-
-#include "threebodyfractal.h"
+#include "libthreebodyfractal.h"
 
 int main() {
   // load

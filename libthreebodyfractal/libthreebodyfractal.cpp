@@ -1,4 +1,4 @@
-#include "threebodyfractal.h"
+#include "libthreebodyfractal.h"
 
 #include <stdio.h>
 
