@@ -7,7 +7,6 @@
 #endif
 #include <Eigen/Dense>
 #include <cmath>
-
 #include <string>
 #include <string_view>
 
@@ -101,6 +100,6 @@ bool load_parameters_from_D3B3(std::string_view filename,
                                state_t *dest_begstate = nullptr,
                                compute_options *opt = nullptr) noexcept;
 
-} // namespace libthreebody
+}  // namespace libthreebody
 
-#endif // LIBTHREEBODY_LIBTHREEBODY_H
+#endif  // LIBTHREEBODY_LIBTHREEBODY_H
