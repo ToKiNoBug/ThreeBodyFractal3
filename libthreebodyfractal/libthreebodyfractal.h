@@ -56,6 +56,31 @@ bool fractal_bin_file_get_end_state(
     fractal_utils::fractal_map *const end_state_dest,
     const bool examine_map_size = false) noexcept;
 
+bool fractal_bin_file_get_end_energy(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_energy_dest,
+    const bool examine_map_size = false) noexcept;
+
+bool fractal_bin_file_get_collide_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_time_dest,
+    const bool examine_map_size = false) noexcept;
+
+bool fractal_bin_file_get_iterate_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_iterate_time_dest,
+    const bool examine_map_size = false) noexcept;
+
+bool fractal_bin_file_get_iterate_fail_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_iterate_fail_time_dest,
+    const bool examine_map_size = false) noexcept;
+
+bool fractal_bin_file_get_result(const fractal_utils::binfile &binfile,
+                                 fractal_utils::fractal_map *const result_dest,
+                                 void *buffer, size_t buffer_capacity,
+                                 const bool examine_map_size = false) noexcept;
+
 void color_by_end_age_u8c3(const result_t *const src, float *const buffer,
                            fractal_utils::pixel_RGB *const dest_u8c3, int num,
                            double max_time, bool invert_float = true,
@@ -83,6 +108,42 @@ void color_by_end_distance_and_age_u8c3(
     bool invert_float = true,
     fractal_utils::color_series cs =
         fractal_utils::color_series::parula) noexcept;
+
+struct render_color_map {
+  std::array<std::array<std::array<float, 2>, 3>, 2> float_range_lut;
+  std::array<std::array<fractal_utils::color_series, 3>, 2> cs_lut;
+
+  inline const std::array<float, 2> &float_range(
+      bool collide, int beg_state_idx) const noexcept {
+    return float_range_lut[int(collide)][beg_state_idx];
+  }
+
+  inline fractal_utils::color_series color_serie_at(
+      bool collide, int beg_state_idx) const noexcept {
+    return cs_lut[int(collide)][beg_state_idx];
+  }
+
+  bool is_color_series_single() const noexcept {
+    fractal_utils::color_series cs = cs_lut[0][0];
+
+    for (int i = 0; i < cs_lut.size(); i++) {
+      for (int j = 0; j < cs_lut[i].size(); j++) {
+        if (cs != cs_lut[i][j]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+};
+
+extern const render_color_map default_color_map_0;
+
+void color_by_all(
+    const result_t *const src, float *const buffer,
+    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
+    const render_color_map &color_map = default_color_map_0) noexcept;
 
 }  // namespace libthreebody
 

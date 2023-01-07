@@ -85,7 +85,7 @@ bool libthreebody::fractal_bin_file_get_information(
       return false;
     }
 
-    *rows_dest = std::get<nbt::TagLong>(info.at("cols"));
+    *cols_dest = std::get<nbt::TagLong>(info.at("cols"));
   }
 
   if (center_input_dest != nullptr) {
@@ -342,8 +342,8 @@ bool libthreebody::fractal_bin_file_get_end_state(
   if (decompressed_bytes !=
       end_state_dest->element_count() * sizeof(double) * 18) {
     printf(
-        "\nError : decompressed bytes mismatch. Should be %llu but infact "
-        "it is %llu.\n",
+        "\nError : decompressed bytes mismatch. Should be %zu but infact "
+        "it is %zu.\n",
         end_state_dest->element_count() * sizeof(double) * 18,
         decompressed_bytes);
     return false;
@@ -352,11 +352,348 @@ bool libthreebody::fractal_bin_file_get_end_state(
   const double *const data = (double *)end_state_dest->data;
 
   for (int64_t idx = end_state_dest->element_count() - 1; idx >= 0; idx--) {
-    memmove(end_state_dest->at<state_t>(idx).position.data(),
-            data + idx * sizeof(double[18]), sizeof(double[9]));
-    memmove(end_state_dest->at<state_t>(idx).velocity.data(),
-            data + idx * sizeof(double[18]) + sizeof(double[9]),
+    memmove(end_state_dest->at<state_t>(idx).position.data(), data + idx * 18,
             sizeof(double[9]));
+    memmove(end_state_dest->at<state_t>(idx).velocity.data(),
+            data + idx * 18 + 9, sizeof(double[9]));
+  }
+
+  return true;
+}
+
+bool libthreebody::fractal_bin_file_get_end_energy(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_state_energy,
+    const bool examine_map_size) noexcept {
+  if (end_state_energy->element_bytes != sizeof(double)) {
+    printf(
+        "\nError : end_state_energy->element_bytes is %zu, but sizeof(double) "
+        "is %zu.\n",
+        end_state_energy->element_bytes, sizeof(double));
+    return false;
+  }
+
+  if (examine_map_size) {
+    bool ok = check_information(binfile, *end_state_energy);
+    if (!ok) {
+      return false;
+    }
+  }
+
+  const fractal_utils::data_block *const state_blk =
+      find_data_block_noduplicate(
+          binfile, libthreebody::fractal_binfile_tag::matrix_end_energy);
+  if (state_blk == nullptr) {
+    return false;
+  }
+
+  size_t decompressed_bytes = 0;
+  bool ok = true;
+  ok = xz_decompress((uint8_t *)state_blk->data, state_blk->bytes,
+                     (uint8_t *)end_state_energy->data,
+                     end_state_energy->byte_count(), &decompressed_bytes);
+  if (!ok) {
+    return false;
+  }
+  if (decompressed_bytes != end_state_energy->byte_count()) {
+    printf(
+        "\nError : decompressed bytes mismatch. Should be %zu but infact "
+        "it is %zu.\n",
+        end_state_energy->byte_count(), decompressed_bytes);
+    return false;
+  }
+
+  return true;
+}
+
+bool libthreebody::fractal_bin_file_get_collide_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_time_dest,
+    const bool examine_map_size) noexcept {
+  if (end_time_dest->element_bytes != sizeof(double)) {
+    printf(
+        "\nError : end_time_dest->element_bytes is %zu, but sizeof(double) "
+        "is %zu.\n",
+        end_time_dest->element_bytes, sizeof(double));
+    return false;
+  }
+
+  if (examine_map_size) {
+    bool ok = check_information(binfile, *end_time_dest);
+    if (!ok) {
+      return false;
+    }
+  }
+
+  const fractal_utils::data_block *const state_blk =
+      find_data_block_noduplicate(
+          binfile, libthreebody::fractal_binfile_tag::matrix_collide_time);
+  if (state_blk == nullptr) {
+    return false;
+  }
+
+  size_t decompressed_bytes = 0;
+  bool ok = true;
+  ok = xz_decompress((uint8_t *)state_blk->data, state_blk->bytes,
+                     (uint8_t *)end_time_dest->data,
+                     end_time_dest->byte_count(), &decompressed_bytes);
+  if (!ok) {
+    return false;
+  }
+  if (decompressed_bytes != end_time_dest->byte_count()) {
+    printf(
+        "\nError : decompressed bytes mismatch. Should be %zu but infact "
+        "it is %zu.\n",
+        end_time_dest->byte_count(), decompressed_bytes);
+    return false;
+  }
+
+  return true;
+}
+
+bool libthreebody::fractal_bin_file_get_iterate_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_iterate_time_dest,
+    const bool examine_map_size) noexcept {
+  if (end_iterate_time_dest->element_bytes != sizeof(int)) {
+    printf(
+        "\nError : end_iterate_time_dest->element_bytes is %zu, but "
+        "sizeof(int) "
+        "is %zu.\n",
+        end_iterate_time_dest->element_bytes, sizeof(int));
+    return false;
+  }
+
+  if (examine_map_size) {
+    bool ok = check_information(binfile, *end_iterate_time_dest);
+    if (!ok) {
+      return false;
+    }
+  }
+
+  const fractal_utils::data_block *const state_blk =
+      find_data_block_noduplicate(
+          binfile, libthreebody::fractal_binfile_tag::matrix_iterate_time);
+  if (state_blk == nullptr) {
+    return false;
+  }
+
+  size_t decompressed_bytes = 0;
+  bool ok = true;
+  ok = xz_decompress((uint8_t *)state_blk->data, state_blk->bytes,
+                     (uint8_t *)end_iterate_time_dest->data,
+                     end_iterate_time_dest->byte_count(), &decompressed_bytes);
+  if (!ok) {
+    return false;
+  }
+  if (decompressed_bytes != end_iterate_time_dest->byte_count()) {
+    printf(
+        "\nError : decompressed bytes mismatch. Should be %zu but infact "
+        "it is %zu.\n",
+        end_iterate_time_dest->byte_count(), decompressed_bytes);
+    return false;
+  }
+
+  return true;
+}
+
+bool libthreebody::fractal_bin_file_get_iterate_fail_time(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const end_iterate_fail_time_dest,
+    const bool examine_map_size) noexcept {
+  if (end_iterate_fail_time_dest->element_bytes != sizeof(int)) {
+    printf(
+        "\nError : end_iterate_fail_time_dest->element_bytes is %zu, but "
+        "sizeof(int) "
+        "is %zu.\n",
+        end_iterate_fail_time_dest->element_bytes, sizeof(int));
+    return false;
+  }
+
+  if (examine_map_size) {
+    bool ok = check_information(binfile, *end_iterate_fail_time_dest);
+    if (!ok) {
+      return false;
+    }
+  }
+
+  const fractal_utils::data_block *const state_blk =
+      find_data_block_noduplicate(
+          binfile, libthreebody::fractal_binfile_tag::matrix_iterate_time);
+  if (state_blk == nullptr) {
+    return false;
+  }
+
+  size_t decompressed_bytes = 0;
+  bool ok = true;
+  ok = xz_decompress((uint8_t *)state_blk->data, state_blk->bytes,
+                     (uint8_t *)end_iterate_fail_time_dest->data,
+                     end_iterate_fail_time_dest->byte_count(),
+                     &decompressed_bytes);
+  if (!ok) {
+    return false;
+  }
+  if (decompressed_bytes != end_iterate_fail_time_dest->byte_count()) {
+    printf(
+        "\nError : decompressed bytes mismatch. Should be %zu but infact "
+        "it is %zu.\n",
+        end_iterate_fail_time_dest->byte_count(), decompressed_bytes);
+    return false;
+  }
+
+  return true;
+}
+
+bool libthreebody::fractal_bin_file_get_result(
+    const fractal_utils::binfile &binfile,
+    fractal_utils::fractal_map *const result_dest, void *buffer,
+    size_t buffer_capacity, const bool examine_map_size) noexcept {
+  if (result_dest->element_bytes != sizeof(result_t)) {
+    printf(
+        "\nError : result_dest->element_bytes is %zu, but "
+        "sizeof(result_t) "
+        "is %zu.\n",
+        result_dest->element_bytes, sizeof(result_t));
+    return false;
+  }
+
+  if (examine_map_size) {
+    bool ok = check_information(binfile, *result_dest);
+    if (!ok) {
+      return false;
+    }
+  }
+
+  if (buffer_capacity < result_dest->element_count() * sizeof(double[18])) {
+    printf("\nError : buffer capacity not enough. Expected at least %zu\n",
+           result_dest->element_count() * sizeof(double[18]));
+    return false;
+  }
+  {
+    const fractal_utils::data_block *blk = nullptr;
+    bool ok = true;
+    size_t decompressed_bytes = 0;
+
+    //-------------------- end state --------------
+    blk = find_data_block_noduplicate(
+        binfile, libthreebody::fractal_binfile_tag::matrix_end_state);
+    if (blk == nullptr) {
+      return false;
+    }
+    ok = xz_decompress((const uint8_t *)blk->data, blk->bytes,
+                       (uint8_t *)buffer, buffer_capacity, &decompressed_bytes);
+    if (!ok) {
+      return false;
+    }
+    if (decompressed_bytes !=
+        result_dest->element_count() * sizeof(double[18])) {
+      printf(
+          "\nError : decompressed bytes mismatch. Should be %zu but infact "
+          "it is %zu.\n",
+          result_dest->element_count() * sizeof(double[18]),
+          decompressed_bytes);
+      return false;
+    }
+    for (int idx = 0; idx < result_dest->element_count(); idx++) {
+      const double *src = ((double *)buffer) + idx * 18;
+
+      auto &dest = result_dest->at<result_t>(idx).end_state;
+
+      memcpy(dest.position.data(), src, sizeof(double[9]));
+      memcpy(dest.velocity.data(), src + 9, sizeof(double[9]));
+    }
+
+    //-------------------- end energy --------------
+    blk = find_data_block_noduplicate(binfile,
+                                      fractal_binfile_tag::matrix_end_energy);
+    if (blk == nullptr) {
+      return false;
+    }
+    ok = xz_decompress((const uint8_t *)blk->data, blk->bytes,
+                       (uint8_t *)buffer, buffer_capacity, &decompressed_bytes);
+    if (!ok) {
+      return false;
+    }
+    if (decompressed_bytes != result_dest->element_count() * sizeof(double)) {
+      printf(
+          "\nError : decompressed bytes mismatch. Should be %zu but infact "
+          "it is %zu.\n",
+          result_dest->element_count() * sizeof(double), decompressed_bytes);
+      return false;
+    }
+    for (int idx = 0; idx < result_dest->element_count(); idx++) {
+      const double *src = ((double *)buffer);
+      result_dest->at<result_t>(idx).end_energy = src[idx];
+    }
+
+    //-------------------- end time --------------
+    blk = find_data_block_noduplicate(binfile,
+                                      fractal_binfile_tag::matrix_collide_time);
+    if (blk == nullptr) {
+      return false;
+    }
+    ok = xz_decompress((const uint8_t *)blk->data, blk->bytes,
+                       (uint8_t *)buffer, buffer_capacity, &decompressed_bytes);
+    if (!ok) {
+      return false;
+    }
+    if (decompressed_bytes != result_dest->element_count() * sizeof(double)) {
+      printf(
+          "\nError : decompressed bytes mismatch. Should be %zu but infact "
+          "it is %zu.\n",
+          result_dest->element_count() * sizeof(double), decompressed_bytes);
+      return false;
+    }
+    for (int idx = 0; idx < result_dest->element_count(); idx++) {
+      const double *src = ((double *)buffer);
+      result_dest->at<result_t>(idx).end_time = src[idx];
+    }
+
+    //-------------------- iterate time --------------
+    blk = find_data_block_noduplicate(binfile,
+                                      fractal_binfile_tag::matrix_iterate_time);
+    if (blk == nullptr) {
+      return false;
+    }
+    ok = xz_decompress((const uint8_t *)blk->data, blk->bytes,
+                       (uint8_t *)buffer, buffer_capacity, &decompressed_bytes);
+    if (!ok) {
+      return false;
+    }
+    if (decompressed_bytes != result_dest->element_count() * sizeof(int)) {
+      printf(
+          "\nError : decompressed bytes mismatch. Should be %zu but infact "
+          "it is %zu.\n",
+          result_dest->element_count() * sizeof(int), decompressed_bytes);
+      return false;
+    }
+    for (int idx = 0; idx < result_dest->element_count(); idx++) {
+      const int *src = ((int *)buffer);
+      result_dest->at<result_t>(idx).iterate_times = src[idx];
+    }
+
+    //-------------------- iterate fail time --------------
+    blk = find_data_block_noduplicate(
+        binfile, fractal_binfile_tag::matrix_iterate_fail_time);
+    if (blk == nullptr) {
+      return false;
+    }
+    ok = xz_decompress((const uint8_t *)blk->data, blk->bytes,
+                       (uint8_t *)buffer, buffer_capacity, &decompressed_bytes);
+    if (!ok) {
+      return false;
+    }
+    if (decompressed_bytes != result_dest->element_count() * sizeof(int)) {
+      printf(
+          "\nError : decompressed bytes mismatch. Should be %zu but infact "
+          "it is %zu.\n",
+          result_dest->element_count() * sizeof(int), decompressed_bytes);
+      return false;
+    }
+    for (int idx = 0; idx < result_dest->element_count(); idx++) {
+      const int *src = ((int *)buffer);
+      result_dest->at<result_t>(idx).fail_search_times = src[idx];
+    }
   }
 
   return true;

@@ -81,7 +81,7 @@ add_executable(test_tbf test_tbf.cpp)
 target_link_libraries(test_tbf PRIVATE threebodyfractal)
 target_compile_options(test_tbf PRIVATE ${ThreebodyFractal_lto_options})
 
-add_executable(test_tbf_load test_tbf2.cpp)
+add_executable(test_tbf_load test_tbf_load.cpp)
 target_link_libraries(test_tbf_load PRIVATE threebodyfractal)
 target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})
 
@@ -94,3 +94,11 @@ add_executable(test_tbf_allocator test_allocator.cpp)
 target_link_libraries(test_tbf_allocator PRIVATE threebodyfractal)
 target_compile_options(test_tbf_allocator
                        PRIVATE ${ThreebodyFractal_lto_options})
+
+add_executable(test_render test_render.cpp)
+target_link_libraries(test_render PRIVATE threebodyfractal)
+target_compile_options(test_render PRIVATE ${ThreebodyFractal_lto_options})
+
+add_executable(test_tbf_load_2 test_tbf_load_2.cpp)
+target_link_libraries(test_tbf_load_2 PRIVATE threebodyfractal)
+target_compile_options(test_tbf_load_2 PRIVATE ${ThreebodyFractal_lto_options})

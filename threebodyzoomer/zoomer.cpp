@@ -36,6 +36,10 @@ void render_fun_end_state_only(
     const fractal_utils::wind_base &window, void *custom_ptr,
     fractal_utils::fractal_map *map_u8c3_do_not_resize);
 
+void render_fun_all(const fractal_utils::fractal_map &map_fractal,
+                    const fractal_utils::wind_base &window, void *custom_ptr,
+                    fractal_utils::fractal_map *map_u8c3_do_not_resize);
+
 bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
                      const fractal_utils::wind_base &window, void *custom_ptr,
                      const fractal_utils::fractal_map &map_u8c3_do_not_resize,
@@ -90,7 +94,7 @@ int main(int argc, char **argV) {
   w.frame_file_extension_list = ".tbf";
   w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
   w.callback_compute_fun = compute_fun;
-  w.callback_render_fun = render_fun_end_state_only;
+  w.callback_render_fun = render_fun_all;
   w.callback_export_fun = export_bin_file;
 
   w.show();
@@ -251,6 +255,26 @@ void render_fun_end_state_only(const fractal_utils::fractal_map &map_fractal,
     color_by_collide_u8c3(map_fractal.address<result_t>(r, 0),
                           map_u8c3->address<fractal_utils::pixel_RGB>(r, 0),
                           map_fractal.cols, params->opt.time_end);
+  }
+}
+
+void render_fun_all(const fractal_utils::fractal_map &map_fractal,
+                    const fractal_utils::wind_base &__wind, void *custom_ptr,
+                    fractal_utils::fractal_map *map_u8c3) {
+  using namespace libthreebody;
+
+  const fractal_utils::center_wind<double> &wind =
+      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  custom_parameters *const params =
+      reinterpret_cast<custom_parameters *>(custom_ptr);
+
+  const float_t max_time = params->opt.time_end;
+#pragma omp parallel for schedule(static)
+  for (int r = 0; r < map_fractal.rows; r++) {
+    color_by_all(map_fractal.address<result_t>(r, 0),
+                 params->buffer_float32.address<float>(r, 0),
+                 map_u8c3->address<fractal_utils::pixel_RGB>(r, 0),
+                 map_fractal.cols, params->opt.time_end);
   }
 }
 
