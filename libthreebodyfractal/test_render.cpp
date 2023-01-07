@@ -1,3 +1,5 @@
+#include <fractal_utils/png_utils.h>
+
 #include "libthreebodyfractal.h"
 
 std::array<int, 2> get_size(const fractal_utils::binfile&,
@@ -29,6 +31,63 @@ int main(int argc, char** argv) {
       fractal_utils::fractal_map::create(rows, cols, sizeof(result_t));
 
   void* const buffer = aligned_alloc(32, map_result.byte_count() * 2.5);
+
+  ok = fractal_bin_file_get_result(binfile, &map_result, buffer,
+                                   map_result.byte_count() * 2.5);
+  if (!ok) {
+    return 1;
+  }
+
+  fractal_utils::fractal_map img =
+      fractal_utils::fractal_map::create(rows, cols, 3);
+
+  color_by_all((const result_t*)map_result.data, (float*)buffer,
+               (fractal_utils::pixel_RGB*)img.data, img.element_count(),
+               opt.time_end);
+  ok = fractal_utils::write_png("./test_all.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+
+  color_by_collide_u8c3((const result_t*)map_result.data,
+                        (fractal_utils::pixel_RGB*)img.data,
+                        img.element_count(), opt.time_end);
+  ok = fractal_utils::write_png("./test_collide.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+
+  color_by_end_age_u8c3((const result_t*)map_result.data, (float*)buffer,
+                        (fractal_utils::pixel_RGB*)img.data,
+                        img.element_count(), opt.time_end);
+  ok = fractal_utils::write_png("./test_age.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+
+  color_by_end_distance_u8c3((const result_t*)map_result.data,
+                             (fractal_utils::pixel_RGB*)img.data,
+                             img.element_count());
+  ok = fractal_utils::write_png("./test_distance.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+  /*
+  color_by_end_distance_and_age_u8c3(
+      (const result_t*)map_result.data, (float*)buffer,
+      (fractal_utils::pixel_RGB*)img.data, img.element_count(), opt.time_end);
+  ok = fractal_utils::write_png("./test_distance_age.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+  */
+
+  printf("success\n");
 
   free(buffer);
   return 0;

@@ -61,21 +61,22 @@ void libthreebody::color_by_collide_u8c3(
 
 const libthreebody::render_color_map libthreebody::default_color_map_0{
     std::array<std::array<std::array<float, 2>, 3>, 2>{
-        std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.25f, 0.25f},
-                                            std::array<float, 2>{0.5f, 0.5f},
-                                            std::array<float, 2>{0.75f, 0.75f}},
-        std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 1.0f},
-                                            std::array<float, 2>{0.0f, 1.0f},
-                                            std::array<float, 2>{0.0f, 1.0f}}},
+        std::array<std::array<float, 2>, 3>{
+            std::array<float, 2>{0.333f, 0.333f},
+            std::array<float, 2>{0.667f, 0.667f},
+            std::array<float, 2>{1.0f, 1.0f}},
+        std::array<std::array<float, 2>, 3>{
+            std::array<float, 2>{0.0f, 0.333f},
+            std::array<float, 2>{0.333f, 0.6667f},
+            std::array<float, 2>{0.667f, 1.0f}}},
     std::array<std::array<fractal_utils::color_series, 3>, 2>{
         std::array<fractal_utils::color_series, 3>{
-            fractal_utils::color_series::gray,
-            fractal_utils::color_series::gray,
-            fractal_utils::color_series::gray},
+            fractal_utils::color_series::pink,
+            fractal_utils::color_series::pink,
+            fractal_utils::color_series::pink},
         std::array<fractal_utils::color_series, 3>{
-            fractal_utils::color_series::autumn,
-            fractal_utils::color_series::cool,
-            fractal_utils::color_series::summer}}};
+            fractal_utils::color_series::jet, fractal_utils::color_series::jet,
+            fractal_utils::color_series::jet}}};
 
 void libthreebody::color_by_all(const result_t *const src, float *const buffer,
                                 fractal_utils::pixel_RGB *const dest_u8c3,
