@@ -56,6 +56,34 @@ bool fractal_bin_file_get_end_state(
     fractal_utils::fractal_map *const end_state_dest,
     const bool examine_map_size = false) noexcept;
 
+void color_by_end_age_u8c3(const result_t *const src, float *const buffer,
+                           fractal_utils::pixel_RGB *const dest_u8c3, int num,
+                           double max_time, bool invert_float = true,
+                           fractal_utils::color_series cs =
+                               fractal_utils::color_series::parula) noexcept;
+
+void color_by_end_distance_u8c3(
+    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
+    int num,
+    const std::array<fractal_utils::pixel_RGB, 3> &color_arr = {
+        fractal_utils::pixel_RGB{62, 38, 168},
+        fractal_utils::pixel_RGB{249, 251, 21},
+        fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
+
+void color_by_collide_u8c3(
+    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
+    int num, double max_time,
+    const std::array<fractal_utils::pixel_RGB, 2> &color_arr = {
+        fractal_utils::pixel_RGB{62, 38, 168},
+        fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
+
+void color_by_end_distance_and_age_u8c3(
+    const result_t *const src, float *const buffer,
+    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
+    bool invert_float = true,
+    fractal_utils::color_series cs =
+        fractal_utils::color_series::parula) noexcept;
+
 }  // namespace libthreebody
 
 #endif  // THREEBODYFRACTAL3_THREEBODYFRACTAL_H

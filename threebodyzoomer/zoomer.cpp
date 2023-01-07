@@ -31,6 +31,11 @@ void render_fun_end_age_only(
     const fractal_utils::wind_base &window, void *custom_ptr,
     fractal_utils::fractal_map *map_u8c3_do_not_resize);
 
+void render_fun_end_state_only(
+    const fractal_utils::fractal_map &map_fractal,
+    const fractal_utils::wind_base &window, void *custom_ptr,
+    fractal_utils::fractal_map *map_u8c3_do_not_resize);
+
 bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
                      const fractal_utils::wind_base &window, void *custom_ptr,
                      const fractal_utils::fractal_map &map_u8c3_do_not_resize,
@@ -46,7 +51,7 @@ int main(int argc, char **argV) {
   using namespace fractal_utils;
   using namespace libthreebody;
 
-  mainwindow w(double(1), nullptr, map_size);
+  mainwindow w(double(1), nullptr, map_size, 4);
 
   {
     center_wind<double> wind;
@@ -57,7 +62,7 @@ int main(int argc, char **argV) {
   }
 
   custom_parameters custp{
-      gpu_mem_allocator(1, cols), input_t(), compute_options(),
+      gpu_mem_allocator(2, cols), input_t(), compute_options(),
       fractal_map::create(rows, cols, sizeof(float)), nullptr};
 
   printf("size of cutp.alloc.size = %i\n", custp.alloc.size());
@@ -85,7 +90,7 @@ int main(int argc, char **argV) {
   w.frame_file_extension_list = ".tbf";
   w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
   w.callback_compute_fun = compute_fun;
-  w.callback_render_fun = render_fun_end_age_only;
+  w.callback_render_fun = render_fun_end_state_only;
   w.callback_export_fun = export_bin_file;
 
   w.show();
@@ -101,7 +106,7 @@ int main(int argc, char **argV) {
 
 std::array<int, 2> get_map_size(int argc,
                                 const char *const *const argv) noexcept {
-  std::array<int, 2> ret{320, 320};
+  std::array<int, 2> ret{160, 160};
 
   if (argc <= 2) {
     return ret;
@@ -225,6 +230,27 @@ void render_fun_end_age_only(const fractal_utils::fractal_map &map_fractal,
         &params->buffer_float32.at<float>(r, 0),
         fractal_utils::color_series::parula, map_fractal.cols,
         &map_u8c3->at<fractal_utils::pixel_RGB>(r, 0));
+  }
+}
+
+void render_fun_end_state_only(const fractal_utils::fractal_map &map_fractal,
+                               const fractal_utils::wind_base &__wind,
+                               void *custom_ptr,
+                               fractal_utils::fractal_map *map_u8c3) {
+  using namespace libthreebody;
+
+  const fractal_utils::center_wind<double> &wind =
+      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  custom_parameters *const params =
+      reinterpret_cast<custom_parameters *>(custom_ptr);
+
+  const float_t max_time = params->opt.time_end;
+
+#pragma omp parallel for schedule(static)
+  for (int r = 0; r < map_fractal.rows; r++) {
+    color_by_collide_u8c3(map_fractal.address<result_t>(r, 0),
+                          map_u8c3->address<fractal_utils::pixel_RGB>(r, 0),
+                          map_fractal.cols, params->opt.time_end);
   }
 }
 

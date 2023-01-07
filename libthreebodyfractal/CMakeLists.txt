@@ -27,8 +27,13 @@ find_package(LibLZMA REQUIRED)
 
 add_library(
   threebodyfractal STATIC
-  libthreebodyfractal.h libthreebodyfractal.cpp save_binfile.cpp
-  load_binfile.cpp memory_resource.h memory_resource.cpp)
+  libthreebodyfractal.h
+  libthreebodyfractal.cpp
+  save_binfile.cpp
+  load_binfile.cpp
+  memory_resource.h
+  memory_resource.cpp
+  coloring.cpp)
 
 target_include_directories(
   threebodyfractal
@@ -44,6 +49,17 @@ target_link_libraries(
          fractal_utils::png_utils
          cudathreebody
          LibLZMA::LibLZMA)
+
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+   OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+  target_compile_options(threebodyfractal PRIVATE -mavx -mavx2 -mfma)
+endif()
+
+if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+   OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+  target_compile_options(threebodyfractal PRIVATE /arch:AVX /arch:AVX2
+                                                  /std:c++${CMAKE_CXX_STANDARD})
+endif()
 
 find_package(Boost COMPONENTS container)
 
