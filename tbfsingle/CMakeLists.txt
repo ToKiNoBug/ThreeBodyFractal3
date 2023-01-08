@@ -4,7 +4,7 @@ enable_language(CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(tbfsingle tbfsingle.cpp)
+add_executable(tbfsingle tbfsingle.cpp run_compute.cpp)
 target_link_libraries(tbfsingle PRIVATE threebodyfractal)
 target_include_directories(
   tbfsingle PRIVATE ${cli11_include_dir}

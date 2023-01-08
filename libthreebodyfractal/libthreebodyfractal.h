@@ -11,6 +11,8 @@
 
 namespace libthreebody {
 
+bool hex_to_binary(const char *hex, void *binary) noexcept;
+
 void compute_many(const input_t *const src, result_t *const dest,
                   const uint64_t count, const compute_options &opt) noexcept;
 

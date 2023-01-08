@@ -143,3 +143,57 @@ void libthreebody::compute_frame_cpu_and_gpu(
 
   printf("\n");
 }
+
+inline uint8_t char_to_u4(char c) noexcept {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  }
+
+  if (c >= 'A' && c <= 'F') {
+    return c - 'A';
+  }
+
+  if (c >= 'a' && c <= 'f') {
+    return c - 'a';
+  }
+
+  return 0xFF;
+}
+
+bool libthreebody::hex_to_binary(const char *hex, void *__binary) noexcept {
+  if (hex[0] == '0' && (hex[1] == 'X' || hex[1] == 'x')) {
+    hex += 2;
+  }
+
+  const size_t hex_strlen = std::strlen(hex);
+  if (hex_strlen % 2 != 0) {
+    printf(
+        "\nError : failed to convert hex to binary : hex string length is %zu, "
+        "but expected even number.\n",
+        hex_strlen);
+    return false;
+  }
+
+  uint8_t *binary = reinterpret_cast<uint8_t *>(__binary);
+
+  while (true) {
+    if (hex[0] == '\0') {
+      break;
+    }
+
+    const uint8_t high_4 = char_to_u4(*(hex++));
+    if (high_4 >= 16) {
+      printf("\nError : invalid char in hex string %c\n", *(hex - 1));
+      return false;
+    }
+    const uint8_t low_4 = char_to_u4(*(hex++));
+    if (low_4 >= 16) {
+      printf("\nError : invalid char in hex string %c\n", *(hex - 1));
+      return false;
+    }
+
+    *(binary++) = (high_4 << 4) | (low_4 & 0b1111);
+  }
+
+  return true;
+}

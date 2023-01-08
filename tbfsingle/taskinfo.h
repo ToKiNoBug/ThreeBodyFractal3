@@ -11,10 +11,16 @@ struct compute_input {
   int cols;
   int cpu_threads;
   int gpu_threads;
+
+  double y_span;
+  double x_span{-1};
+  std::string center_hex;
 };
 
 struct render_input {
   std::string tbf_file;
 };
+
+bool run_compute(const compute_input &ci) noexcept;
 
 #endif  // THREEBODYFRACTAL3_TBFSINGLE_TASKINFO_H

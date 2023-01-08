@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   compute
       ->add_option("--center-input", ci.beg_statue_file,
                    "Get center beginning statue from *.tbf or *.paraD3B3 file")
-      ->check(CLI::ExistingDirectory)
+      ->check(CLI::ExistingFile)
       ->required();
 
   compute->add_option("-o", ci.out_put_file, "Name of generated .tbf file.")
@@ -40,12 +40,37 @@ int main(int argc, char** argv) {
   compute->add_option("--gpu-threads", ci.gpu_threads, "GPU tasks at one time")
       ->required()
       ->check(CLI::NonNegativeNumber);
+  compute->add_option("--yspan", ci.y_span, "Y span")
+      ->required()
+      ->check(CLI::PositiveNumber);
+  /*
+compute->add_option("--xspan", ci.x_span, "X span (default=Y span *cols/rows")
+  ->check(CLI::PositiveNumber)
+  ->default_val(-1.0);
+  */
+  compute->add_option("--center-hex", ci.center_hex, "32 digit hex value.")
+      ->default_val("0x00000000000000000000000000000000");
 
   CLI11_PARSE(app, argc, argv);
 
   if (compute->parsed()) {
     ci.opt.step_guess *= libthreebody::year;
     ci.opt.time_end *= libthreebody::year;
+
+    ci.x_span = (ci.y_span * ci.cols) / ci.rows;
+
+    if (ci.center_hex.length() != 32 && ci.center_hex.length() != 34) {
+      printf(
+          "Invalid length for center_hex. Expected 32 of 34(with 0x prefix) "
+          "but acually %zu\n",
+          ci.center_hex.length());
+      return 1;
+    }
+
+    if (!run_compute(ci)) {
+      printf("\nFailed to compute.\n");
+      return 1;
+    }
   }
 
   if (render->parsed()) {
