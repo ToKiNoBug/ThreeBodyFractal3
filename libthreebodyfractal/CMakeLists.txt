@@ -7,7 +7,7 @@ endif()
 
 enable_language(CUDA)
 
-set(CMAKE_CXX_STANDARD 23)
+# set(CMAKE_CXX_STANDARD 23)
 find_package(OpenMP REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
@@ -15,9 +15,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
 
 find_package(PNG REQUIRED)
 
-# list( APPEND CMAKE_PREFIX_PATH
-# "/media/jeremiah/D/Git/build-ThreeBodyFractal3-linux/3rdParty/FractalUtils/install"
-# )
 find_package(
   fractal_utils ${version_fu}
   COMPONENTS core_utils png_utils
@@ -40,6 +37,9 @@ target_include_directories(
   PUBLIC ${CMAKE_SOURCE_DIR}/libthreebody ${fractal_utils_INCLUDE_DIR}
          ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir})
 
+target_compile_features(threebodyfractal PRIVATE cxx_std_23)
+
+# target_compile_features(${target} PRIVATE cxx_std_23)
 target_link_libraries(
   threebodyfractal
   PUBLIC OpenMP::OpenMP_CXX

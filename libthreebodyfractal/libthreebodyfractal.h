@@ -83,6 +83,17 @@ bool fractal_bin_file_get_result(const fractal_utils::binfile &binfile,
                                  void *buffer, size_t buffer_capacity,
                                  const bool examine_map_size = false) noexcept;
 
+enum render_method {
+  collide_time,
+  end_distance,
+  collide_binary,
+  end_distance_and_collide_time,
+};
+
+using color_map_collide_time = fractal_utils::color_series;
+using color_map_end_distance = std::array<fractal_utils::pixel_RGB, 3>;
+using color_map_collide_binary = std::array<fractal_utils::pixel_RGB, 2>;
+
 void color_by_end_age_u8c3(const result_t *const src, float *const buffer,
                            fractal_utils::pixel_RGB *const dest_u8c3, int num,
                            double max_time, bool invert_float = true,
@@ -111,33 +122,15 @@ void color_by_end_distance_and_age_u8c3(
     fractal_utils::color_series cs =
         fractal_utils::color_series::parula) noexcept;
 
+void color_by_triangle(const result_t *const src, float *const buffer,
+                       fractal_utils::pixel_RGB *const dest_u8c3, int num,
+                       fractal_utils::color_series cs =
+                           fractal_utils::color_series::parula) noexcept;
+
 struct render_color_map {
-  std::array<std::array<std::array<float, 2>, 3>, 2> float_range_lut;
-  std::array<std::array<fractal_utils::color_series, 3>, 2> cs_lut;
-
-  inline const std::array<float, 2> &float_range(
-      bool collide, int beg_state_idx) const noexcept {
-    return float_range_lut[int(collide)][beg_state_idx];
-  }
-
-  inline fractal_utils::color_series color_serie_at(
-      bool collide, int beg_state_idx) const noexcept {
-    return cs_lut[int(collide)][beg_state_idx];
-  }
-
-  bool is_color_series_single() const noexcept {
-    fractal_utils::color_series cs = cs_lut[0][0];
-
-    for (int i = 0; i < cs_lut.size(); i++) {
-      for (int j = 0; j < cs_lut[i].size(); j++) {
-        if (cs != cs_lut[i][j]) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
+  std::array<std::array<float, 2>, 3> float_range_lut_collide;
+  std::array<fractal_utils::color_series, 3> cs_lut_collide;
+  std::array<fractal_utils::pixel_RGB, 3> color_no_collide;
 };
 
 extern const render_color_map default_color_map_0;

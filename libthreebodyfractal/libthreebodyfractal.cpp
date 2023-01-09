@@ -48,6 +48,11 @@ void libthreebody::compute_frame(const input_t &center_input,
 
   std::atomic_int finished_rows(0);
   std::mutex lock;
+  if (display_progress) {
+    printf("\r[ %i / %i ] %f%% tasks finished.",
+           int(finished_rows * dest->cols), int(dest->element_count()),
+           float(100 * finished_rows * dest->cols) / dest->element_count());
+  }
 
 #pragma omp parallel for schedule(dynamic)
   for (int r = 0; r < dest->rows; r++) {
