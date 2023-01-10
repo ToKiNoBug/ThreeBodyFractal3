@@ -87,6 +87,14 @@ int main(int argc, char** argv) {
   }
   */
 
+  color_by_triangle((const result_t*)map_result.data, (float*)buffer,
+                    (fractal_utils::pixel_RGB*)img.data, img.element_count());
+  ok = fractal_utils::write_png("./test_triangle.png",
+                                fractal_utils::color_space::u8c3, img);
+  if (!ok) {
+    return 1;
+  }
+
   printf("success\n");
 
   free(buffer);

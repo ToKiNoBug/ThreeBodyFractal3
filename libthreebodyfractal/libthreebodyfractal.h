@@ -87,12 +87,14 @@ enum render_method {
   collide_time,
   end_distance,
   collide_binary,
-  end_distance_and_collide_time,
+  triangle,
+  all
 };
 
 using color_map_collide_time = fractal_utils::color_series;
 using color_map_end_distance = std::array<fractal_utils::pixel_RGB, 3>;
 using color_map_collide_binary = std::array<fractal_utils::pixel_RGB, 2>;
+using color_map_triangle = fractal_utils::color_series;
 
 void color_by_end_age_u8c3(const result_t *const src, float *const buffer,
                            fractal_utils::pixel_RGB *const dest_u8c3, int num,
@@ -115,30 +117,39 @@ void color_by_collide_u8c3(
         fractal_utils::pixel_RGB{62, 38, 168},
         fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
 
-void color_by_end_distance_and_age_u8c3(
-    const result_t *const src, float *const buffer,
-    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
-    bool invert_float = true,
-    fractal_utils::color_series cs =
-        fractal_utils::color_series::parula) noexcept;
-
 void color_by_triangle(const result_t *const src, float *const buffer,
                        fractal_utils::pixel_RGB *const dest_u8c3, int num,
                        fractal_utils::color_series cs =
                            fractal_utils::color_series::parula) noexcept;
 
-struct render_color_map {
+struct color_map_all {
   std::array<std::array<float, 2>, 3> float_range_lut_collide;
   std::array<fractal_utils::color_series, 3> cs_lut_collide;
-  std::array<fractal_utils::pixel_RGB, 3> color_no_collide;
-};
+  std::array<std::array<float, 2>, 3> float_range_lut_nocollide;
+  std::array<fractal_utils::color_series, 3> cs_lut_nocollide;
 
-extern const render_color_map default_color_map_0;
+  inline const std::array<float, 2> &range(bool collide,
+                                           int idx) const noexcept {
+    if (collide) {
+      return float_range_lut_collide[idx];
+    }
+    return float_range_lut_nocollide[idx];
+  }
+
+  inline fractal_utils::color_series color_serie(bool collide,
+                                                 int idx) const noexcept {
+    if (collide) {
+      return cs_lut_collide[idx];
+    }
+    return cs_lut_nocollide[idx];
+  }
+};
+extern const color_map_all default_color_map_0;
 
 void color_by_all(
     const result_t *const src, float *const buffer,
     fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
-    const render_color_map &color_map = default_color_map_0) noexcept;
+    const color_map_all &color_map = default_color_map_0) noexcept;
 
 }  // namespace libthreebody
 
