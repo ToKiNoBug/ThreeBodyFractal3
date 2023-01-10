@@ -2,7 +2,7 @@
 
 # list(APPEND CMAKE_PREFIX_PATH "D:/Git/build-FractalUtils-win/install")
 
-set(version_fu 1.1.7)
+set(version_fu 2.0.0)
 
 find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils)
 

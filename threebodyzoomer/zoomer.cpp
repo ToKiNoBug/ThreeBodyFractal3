@@ -55,7 +55,7 @@ int main(int argc, char **argV) {
   using namespace fractal_utils;
   using namespace libthreebody;
 
-  mainwindow w(double(1), nullptr, map_size, 4);
+  mainwindow w(double(1), nullptr, map_size, sizeof(result_t), 4);
 
   {
     center_wind<double> wind;
@@ -92,7 +92,7 @@ int main(int argc, char **argV) {
 
   w.custom_parameters = &custp;
   w.frame_file_extension_list = ".tbf";
-  w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
+  // w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
   w.callback_compute_fun = compute_fun;
   w.callback_render_fun = render_fun_all;
   w.callback_export_fun = export_bin_file;
