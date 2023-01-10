@@ -69,16 +69,26 @@ const libthreebody::color_map_all libthreebody::default_color_map_0{
     std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 0.333f},
                                         std::array<float, 2>{0.333f, 0.6667f},
                                         std::array<float, 2>{0.667f, 1.0f}},
-    std::array<fractal_utils::color_series, 3>{
-        fractal_utils::color_series::jet, fractal_utils::color_series::jet,
-        fractal_utils::color_series::jet},
 
     std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 1.0f},
                                         std::array<float, 2>{0.0f, 1.0f},
                                         std::array<float, 2>{0.0f, 1.0f}},
+
+    std::array<fractal_utils::color_series, 3>{
+        fractal_utils::color_series::jet, fractal_utils::color_series::jet,
+        fractal_utils::color_series::jet},
+
     std::array<fractal_utils::color_series, 3>{
         fractal_utils::color_series::pink, fractal_utils::color_series::pink,
-        fractal_utils::color_series::pink}};
+        fractal_utils::color_series::pink},
+    std::array<uint8_t, 3>{0xFF, 0xFF, 0xFF},
+    std::array<uint8_t, 3>{0xFF, 0xFF, 0xFF},
+    std::array<render_method, 3>{render_method::collide_time,
+                                 render_method::collide_time,
+                                 render_method::collide_time},
+    std::array<render_method, 3>{render_method::triangle,
+                                 render_method::triangle,
+                                 render_method::triangle}};
 
 void libthreebody::color_by_all(const result_t *const src, float *const buffer,
                                 fractal_utils::pixel_RGB *const dest_u8c3,
@@ -126,6 +136,130 @@ void libthreebody::color_by_triangle(const result_t *const src,
   }
 
   fractal_utils::color_u8c3_many(buffer, cs, num, dest_u8c3);
+}
+
+#include <limits>
+
+struct range_t {
+  float min{std::numeric_limits<float>::infinity()};
+  float max{-std::numeric_limits<float>::infinity()};
+};
+
+bool libthreebody::render_universial(
+    const fractal_utils::fractal_map &map_result,
+    const std::array<int, 2> &skip_rows_cols, void *const _voidp_buffer,
+    size_t buffer_capacity, fractal_utils::fractal_map *const img_u8c3,
+    double max_time, const color_map_all &color_map) noexcept {
+  const size_t row_beg = skip_rows_cols[0];
+  const size_t row_end = map_result.rows - skip_rows_cols[0];
+
+  const size_t col_beg = skip_rows_cols[1];
+  const size_t col_end = map_result.cols - skip_rows_cols[1];
+
+  if (row_end < row_beg + 2 || col_end < col_beg + 2) {
+    printf("\nError : image too small.\n");
+    return false;
+  }
+
+  if (buffer_capacity <
+      map_result.element_count() * (sizeof(float) + sizeof(uint8_t))) {
+    printf(
+        "\nError : libthreebody::render_universial failed : insuffcient "
+        "memory.\n");
+    return false;
+  }
+
+  uint8_t *const _u8p_buffer = reinterpret_cast<uint8_t *>(_voidp_buffer);
+
+  fractal_utils::fractal_map map_float(map_result.rows, map_result.cols,
+                                       sizeof(float), _u8p_buffer);
+
+  fractal_utils::fractal_map map_u8(map_result.rows, map_result.cols,
+                                    sizeof(uint8_t),
+                                    _u8p_buffer + map_float.byte_count());
+
+  // offset=idx_3*2+collide;
+  // collide=offset&0b1;
+  // idx_3=offset>>1;
+
+  std::array<range_t, 6> range_arr;
+  std::array<fractal_utils::color_source_t, 6> color_source_t_arr;
+
+  for (uint8_t offset = 0; offset < 6; offset++) {
+    const bool collide = offset & 0b1;
+    const int idx_3 = offset >> 1;
+
+    color_source_t_arr[offset] =
+        fractal_utils::color_source(color_map.color_serie(collide, idx_3));
+  }
+
+  std::array<double, 3> distance_2;
+  std::array<float, 3> distance;
+
+  for (size_t r = row_beg; r < row_end; r++) {
+    for (size_t c = col_beg; c < col_end; c++) {
+      const bool collide = map_result.at<result_t>(r, c).end_time < max_time;
+      const int idx_3 = compute_distance_idx(
+          map_result.at<result_t>(r, c).end_state.position, &distance_2);
+
+      float val;
+
+      switch (color_map.render_method_(collide, idx_3)) {
+        case render_method::collide_binary:
+          val = collide;
+          break;
+        case render_method::collide_time:
+          val = map_result.at<result_t>(r, c).end_time / max_time;
+          break;
+        case render_method::end_distance:
+          val = idx_3 / 2.0f;
+          break;
+        case render_method::triangle: {
+          for (int j = 0; j < 3; j++) {
+            distance[j] = std::sqrt(distance_2[j]);
+          }
+          val = distance[2] / (distance[0] + distance[1]);
+          break;
+        }
+      }
+      // end switch
+
+      const uint8_t nid = color_map.normalize_id(collide, idx_3);
+      if (nid < 6) {
+        range_arr[nid].max = std::max(range_arr[nid].max, val);
+        range_arr[nid].min = std::min(range_arr[nid].min, val);
+      }
+
+      uint8_t offset = idx_3 * 2 + collide;
+      map_float.at<float>(r, c) = val;
+      map_u8.at<uint8_t>(r, c) = offset;
+    }
+  }
+
+  for (size_t r = row_beg; r < row_end; r++) {
+    for (size_t c = col_beg; c < col_end; c++) {
+      const uint8_t offset = map_u8.at<uint8_t>(r, c);
+      const bool collide = offset & 0b1;
+      const int idx_3 = offset >> 1;
+
+      const uint8_t nid = color_map.normalize_id(collide, idx_3);
+
+      float &val = map_float.at<float>(r, c);
+      if (nid < 6) {
+        const float min = range_arr[nid].min;
+        const float max = range_arr[nid].max;
+
+        val = (val - min) / (max - min) + min;
+      }
+      const auto &range = color_map.range(collide, idx_3);
+      val = (range[1] - range[0]) * val + range[0];
+
+      img_u8c3->at<fractal_utils::pixel_RGB>(r, c) =
+          fractal_utils::color_u8c3(val, color_source_t_arr[offset]);
+    }
+  }
+
+  return true;
 }
 
 #include <fstream>
@@ -178,7 +312,7 @@ bool parse_range_cs_pair(const nlohmann::json &object,
   }
 
   // printf("color serie = %s\n", fractal_utils::color_series_enum_to_str(*cs));
-
+#warning here
   return true;
 }
 

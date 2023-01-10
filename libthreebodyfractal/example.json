@@ -6,21 +6,27 @@
                     0,
                     0.333
                 ],
-                "color_serie": "jet"
+                "color_serie": "jet",
+                "normalize_id": 255,
+                "render_method": "collide_time"
             },
             {
                 "range": [
                     0.333,
                     0.667
                 ],
-                "color_serie": "jet"
+                "color_serie": "jet",
+                "normalize_id": 255,
+                "render_method": "collide_time"
             },
             {
                 "range": [
                     0.667,
                     1.0
                 ],
-                "color_serie": "jet"
+                "color_serie": "jet",
+                "normalize_id": 255,
+                "render_method": "collide_time"
             }
         ],
         "nocollide": [
@@ -29,21 +35,27 @@
                     0.0,
                     1.0
                 ],
-                "color_serie": "pink"
+                "color_serie": "pink",
+                "normalize_id": 255,
+                "render_method": "triangle"
             },
             {
                 "range": [
                     0.0,
                     1.0
                 ],
-                "color_serie": "pink"
+                "color_serie": "pink",
+                "normalize_id": 255,
+                "render_method": "triangle"
             },
             {
                 "range": [
                     0.0,
                     1.0
                 ],
-                "color_serie": "pink"
+                "color_serie": "pink",
+                "normalize_id": 255,
+                "render_method": "triangle"
             }
         ]
     }

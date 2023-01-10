@@ -41,55 +41,13 @@ int main(int argc, char** argv) {
   fractal_utils::fractal_map img =
       fractal_utils::fractal_map::create(rows, cols, 3);
 
-  color_by_all((const result_t*)map_result.data, (float*)buffer,
-               (fractal_utils::pixel_RGB*)img.data, img.element_count(),
-               opt.time_end);
-  ok = fractal_utils::write_png("./test_all.png",
-                                fractal_utils::color_space::u8c3, img);
-  if (!ok) {
+  if (!render_universial(map_result, {0, 0}, buffer,
+                         map_result.byte_count() * 2.5, &img, opt.time_end)) {
+    printf("Failed to render\n");
     return 1;
   }
 
-  color_by_collide_u8c3((const result_t*)map_result.data,
-                        (fractal_utils::pixel_RGB*)img.data,
-                        img.element_count(), opt.time_end);
-  ok = fractal_utils::write_png("./test_collide.png",
-                                fractal_utils::color_space::u8c3, img);
-  if (!ok) {
-    return 1;
-  }
-
-  color_by_end_age_u8c3((const result_t*)map_result.data, (float*)buffer,
-                        (fractal_utils::pixel_RGB*)img.data,
-                        img.element_count(), opt.time_end);
-  ok = fractal_utils::write_png("./test_age.png",
-                                fractal_utils::color_space::u8c3, img);
-  if (!ok) {
-    return 1;
-  }
-
-  color_by_end_distance_u8c3((const result_t*)map_result.data,
-                             (fractal_utils::pixel_RGB*)img.data,
-                             img.element_count());
-  ok = fractal_utils::write_png("./test_distance.png",
-                                fractal_utils::color_space::u8c3, img);
-  if (!ok) {
-    return 1;
-  }
-  /*
-  color_by_end_distance_and_age_u8c3(
-      (const result_t*)map_result.data, (float*)buffer,
-      (fractal_utils::pixel_RGB*)img.data, img.element_count(), opt.time_end);
-  ok = fractal_utils::write_png("./test_distance_age.png",
-                                fractal_utils::color_space::u8c3, img);
-  if (!ok) {
-    return 1;
-  }
-  */
-
-  color_by_triangle((const result_t*)map_result.data, (float*)buffer,
-                    (fractal_utils::pixel_RGB*)img.data, img.element_count());
-  ok = fractal_utils::write_png("./test_triangle.png",
+  ok = fractal_utils::write_png("./test_all_new.png",
                                 fractal_utils::color_space::u8c3, img);
   if (!ok) {
     return 1;

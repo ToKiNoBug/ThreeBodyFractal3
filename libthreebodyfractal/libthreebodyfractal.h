@@ -83,26 +83,21 @@ bool fractal_bin_file_get_result(const fractal_utils::binfile &binfile,
                                  void *buffer, size_t buffer_capacity,
                                  const bool examine_map_size = false) noexcept;
 
-enum render_method {
+enum class render_method : uint8_t {
   collide_time,
   end_distance,
   collide_binary,
-  triangle,
-  all
+  triangle
 };
 
-using color_map_collide_time = fractal_utils::color_series;
-using color_map_end_distance = std::array<fractal_utils::pixel_RGB, 3>;
-using color_map_collide_binary = std::array<fractal_utils::pixel_RGB, 2>;
-using color_map_triangle = fractal_utils::color_series;
+[[deprecated]] void color_by_end_age_u8c3(
+    const result_t *const src, float *const buffer,
+    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
+    bool invert_float = true,
+    fractal_utils::color_series cs =
+        fractal_utils::color_series::parula) noexcept;
 
-void color_by_end_age_u8c3(const result_t *const src, float *const buffer,
-                           fractal_utils::pixel_RGB *const dest_u8c3, int num,
-                           double max_time, bool invert_float = true,
-                           fractal_utils::color_series cs =
-                               fractal_utils::color_series::parula) noexcept;
-
-void color_by_end_distance_u8c3(
+[[deprecated]] void color_by_end_distance_u8c3(
     const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
     int num,
     const std::array<fractal_utils::pixel_RGB, 3> &color_arr = {
@@ -110,23 +105,30 @@ void color_by_end_distance_u8c3(
         fractal_utils::pixel_RGB{249, 251, 21},
         fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
 
-void color_by_collide_u8c3(
+[[deprecated]] void color_by_collide_u8c3(
     const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
     int num, double max_time,
     const std::array<fractal_utils::pixel_RGB, 2> &color_arr = {
         fractal_utils::pixel_RGB{62, 38, 168},
         fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
 
-void color_by_triangle(const result_t *const src, float *const buffer,
-                       fractal_utils::pixel_RGB *const dest_u8c3, int num,
-                       fractal_utils::color_series cs =
-                           fractal_utils::color_series::parula) noexcept;
+[[deprecated]] void color_by_triangle(
+    const result_t *const src, float *const buffer,
+    fractal_utils::pixel_RGB *const dest_u8c3, int num,
+    fractal_utils::color_series cs =
+        fractal_utils::color_series::parula) noexcept;
 
 struct color_map_all {
   std::array<std::array<float, 2>, 3> float_range_lut_collide;
-  std::array<fractal_utils::color_series, 3> cs_lut_collide;
   std::array<std::array<float, 2>, 3> float_range_lut_nocollide;
+  std::array<fractal_utils::color_series, 3> cs_lut_collide;
   std::array<fractal_utils::color_series, 3> cs_lut_nocollide;
+  // id with 0xFF means do not normalize
+  std::array<uint8_t, 3> normalize_id_collide;
+  // id with 0xFF means do not normalize
+  std::array<uint8_t, 3> normalize_id_nocollide;
+  std::array<render_method, 3> method_collide;
+  std::array<render_method, 3> method_nocollide;
 
   inline const std::array<float, 2> &range(bool collide,
                                            int idx) const noexcept {
@@ -143,16 +145,37 @@ struct color_map_all {
     }
     return cs_lut_nocollide[idx];
   }
+
+  inline uint8_t normalize_id(bool collide, int idx) const noexcept {
+    if (collide) {
+      return normalize_id_collide[idx];
+    }
+    return normalize_id_nocollide[idx];
+  }
+
+  inline render_method render_method_(bool collide, int idx) const noexcept {
+    if (collide) {
+      return method_collide[idx];
+    }
+    return method_nocollide[idx];
+  }
 };
 extern const color_map_all default_color_map_0;
 
-void color_by_all(
+[[deprecated]] void color_by_all(
     const result_t *const src, float *const buffer,
     fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
     const color_map_all &color_map = default_color_map_0) noexcept;
 
 bool load_color_map_all_from_file(const char *const filename,
                                   color_map_all *const dest) noexcept;
+
+bool render_universial(
+    const fractal_utils::fractal_map &map_result,
+    const std::array<int, 2> &skip_rows_cols, void *const buffer,
+    size_t buffer_capacity, fractal_utils::fractal_map *const img_u8c3,
+    double max_time,
+    const color_map_all &color_map = default_color_map_0) noexcept;
 
 }  // namespace libthreebody
 
