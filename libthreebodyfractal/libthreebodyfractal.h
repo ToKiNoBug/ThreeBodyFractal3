@@ -151,6 +151,9 @@ void color_by_all(
     fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
     const color_map_all &color_map = default_color_map_0) noexcept;
 
+bool load_color_map_all_from_file(const char *const filename,
+                                  color_map_all *const dest) noexcept;
+
 }  // namespace libthreebody
 
 #endif  // THREEBODYFRACTAL3_THREEBODYFRACTAL_H

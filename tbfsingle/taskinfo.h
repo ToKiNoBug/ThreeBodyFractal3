@@ -19,8 +19,12 @@ struct compute_input {
 
 struct render_input {
   std::string tbf_file;
+  std::string png_file;
+  std::string json_file;
 };
 
 bool run_compute(const compute_input &ci) noexcept;
+
+bool run_render(const render_input &ri) noexcept;
 
 #endif  // THREEBODYFRACTAL3_TBFSINGLE_TASKINFO_H

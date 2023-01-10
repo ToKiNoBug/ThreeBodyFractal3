@@ -1,0 +1,50 @@
+{
+    "color_map_all": {
+        "collide": [
+            {
+                "range": [
+                    0,
+                    0.333
+                ],
+                "color_serie": "jet"
+            },
+            {
+                "range": [
+                    0.333,
+                    0.667
+                ],
+                "color_serie": "jet"
+            },
+            {
+                "range": [
+                    0.667,
+                    1.0
+                ],
+                "color_serie": "jet"
+            }
+        ],
+        "nocollide": [
+            {
+                "range": [
+                    0.0,
+                    1.0
+                ],
+                "color_serie": "pink"
+            },
+            {
+                "range": [
+                    0.0,
+                    1.0
+                ],
+                "color_serie": "pink"
+            },
+            {
+                "range": [
+                    0.0,
+                    1.0
+                ],
+                "color_serie": "pink"
+            }
+        ]
+    }
+}

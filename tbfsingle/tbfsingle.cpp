@@ -51,6 +51,19 @@ compute->add_option("--xspan", ci.x_span, "X span (default=Y span *cols/rows")
   compute->add_option("--center-hex", ci.center_hex, "32 digit hex value.")
       ->default_val("0x00000000000000000000000000000000");
 
+  render_input ri;
+
+  render->add_option("--source", ri.tbf_file, ".tbf file used as data source")
+      ->required()
+      ->check(CLI::ExistingFile);
+  render->add_option("-o", ri.png_file, "Exported png file.")
+      ->default_val("./tbfsingle_render_default.png");
+  const CLI::Option* const color_map_json =
+      render
+          ->add_option("--color-map-json", ri.json_file,
+                       "Json file that determines a color map for rendering.")
+          ->check(CLI::ExistingFile);
+
   CLI11_PARSE(app, argc, argv);
 
   if (compute->parsed()) {
@@ -74,6 +87,14 @@ compute->add_option("--xspan", ci.x_span, "X span (default=Y span *cols/rows")
   }
 
   if (render->parsed()) {
+    // printf("color_map_json->count() = %zu\n", color_map_json->count());
+    if (color_map_json->count() <= 0) {
+      ri.json_file = "";
+    }
+    if (!run_render(ri)) {
+      printf("\nFaied to render.\n");
+      return 1;
+    }
   }
 
   return 0;

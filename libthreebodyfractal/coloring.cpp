@@ -127,3 +127,121 @@ void libthreebody::color_by_triangle(const result_t *const src,
 
   fractal_utils::color_u8c3_many(buffer, cs, num, dest_u8c3);
 }
+
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+bool parse_range_cs_pair(const nlohmann::json &object,
+                         std::array<float, 2> *range,
+                         fractal_utils::color_series *cs) noexcept {
+  using njson = nlohmann::json;
+
+  if (!object.contains("range") || !object.at("range").is_array()) {
+    printf("\nError : no valid value for float array \"range\".\n");
+    return false;
+  }
+
+  const njson::array_t &range_arr = object.at("range");
+
+  if (range_arr.size() != 2 || !range_arr.front().is_number()) {
+    printf(
+        "\nError : invalid value for float array \"range\" : element is not "
+        "number.\n");
+    return false;
+  }
+
+  for (int i = 0; i < 2; i++) {
+    range->at(i) = range_arr[i];
+    if (range->at(i) < 0.0f || range->at(i) > 1.0f) {
+      printf(
+          "\nError : invalid value for float array \"range\" : element at "
+          "index %i is %F, which goes out of range [0,1].\n",
+          i, range->at(i));
+      return false;
+    }
+  }
+
+  if (!object.contains("color_serie") ||
+      !object.at("color_serie").is_string()) {
+    printf("\nError : no valid value for string \"color_serie\".\n");
+    return false;
+  }
+
+  const std::string cs_str = object.at("color_serie");
+
+  bool ok = true;
+
+  *cs = fractal_utils::color_series_str_to_enum(cs_str.data(), &ok);
+  if (!ok) {
+    printf("\nError : unknown color serie named \"%s\"\n", cs_str.data());
+    return false;
+  }
+
+  // printf("color serie = %s\n", fractal_utils::color_series_enum_to_str(*cs));
+
+  return true;
+}
+
+// #include <iostream>
+
+bool libthreebody::load_color_map_all_from_file(
+    const char *const filename, color_map_all *const dest) noexcept {
+  using njson = nlohmann::json;
+  njson json;
+  try {
+    std::ifstream(filename) >> json;
+  } catch (...) {
+    printf("\nError : nlohmann json failed to parse json file : %s\n",
+           filename);
+    return false;
+  }
+
+  if (!json.contains("color_map_all") ||
+      !json.at("color_map_all").is_object()) {
+    printf("\nError : no valid value for object color_map_all.\n");
+    return false;
+  }
+
+  const njson &obj = json.at("color_map_all");
+
+  // std::cout << obj << std::endl;
+
+  const std::array<const char *, 2> keys{"collide", "nocollide"};
+
+  for (int kidx = 0; kidx < 2; kidx++) {
+    if (!obj.contains(keys[kidx]) || !obj.at(keys[kidx]).is_array()) {
+      printf(
+          "\nError : no valid value for key \"%s\" : expected an array of "
+          "objects\n",
+          keys[kidx]);
+      return false;
+    }
+
+    const njson::array_t &arr = obj.at(keys[kidx]);
+
+    if (arr.size() != 3 || !arr.front().is_object()) {
+      printf(
+          "\nError : invalid value for array named \"%s\" : size should be 3 "
+          "and elements should be objects\n",
+          keys[kidx]);
+      return false;
+    }
+  }
+
+  for (int idx = 0; idx < 3; idx++) {
+    if (!parse_range_cs_pair(obj.at("collide")[idx],
+                             &dest->float_range_lut_collide[idx],
+                             &dest->cs_lut_collide[idx])) {
+      printf("\nError : failed to parse color_map_all.\n");
+      return false;
+    }
+    if (!parse_range_cs_pair(obj.at("nocollide")[idx],
+                             &dest->float_range_lut_nocollide[idx],
+                             &dest->cs_lut_nocollide[idx])) {
+      printf("\nError : failed to parse color_map_all.\n");
+      return false;
+    }
+  }
+
+  return true;
+}

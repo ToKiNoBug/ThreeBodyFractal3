@@ -12,6 +12,7 @@ find_package(OpenMP REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 
 find_package(PNG REQUIRED)
 
@@ -33,9 +34,11 @@ add_library(
   coloring.cpp)
 
 target_include_directories(
-  threebodyfractal
-  PUBLIC ${CMAKE_SOURCE_DIR}/libthreebody ${fractal_utils_INCLUDE_DIR}
-         ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir})
+  threebodyfractal PUBLIC ${CMAKE_SOURCE_DIR}/libthreebody
+                          ${fractal_utils_INCLUDE_DIR})
+target_include_directories(
+  threebodyfractal PRIVATE ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir}
+                           ${nlohmann_json_include_dir})
 
 target_compile_features(threebodyfractal PRIVATE cxx_std_23)
 
