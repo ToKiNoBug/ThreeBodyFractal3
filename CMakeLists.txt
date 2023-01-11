@@ -37,5 +37,6 @@ add_subdirectory(libcudathreebody)
 add_subdirectory(libthreebodyfractal)
 add_subdirectory(threebodyzoomer)
 add_subdirectory(tbfsingle)
+add_subdirectory(tbf-task-gen)
 
 # add_subdirectory(old)
