@@ -19,26 +19,15 @@ struct custom_parameters {
   libthreebody::gpu_mem_allocator alloc;
   libthreebody::input_t center_input;
   libthreebody::compute_options opt;
-  fractal_utils::fractal_map buffer_float32;
   void *buffer_export;
 };
 
 void compute_fun(const fractal_utils::wind_base &, void *custom_ptr,
                  fractal_utils::fractal_map *map_fractal);
 
-void render_fun_end_age_only(
-    const fractal_utils::fractal_map &map_fractal,
-    const fractal_utils::wind_base &window, void *custom_ptr,
-    fractal_utils::fractal_map *map_u8c3_do_not_resize);
-
-void render_fun_end_state_only(
-    const fractal_utils::fractal_map &map_fractal,
-    const fractal_utils::wind_base &window, void *custom_ptr,
-    fractal_utils::fractal_map *map_u8c3_do_not_resize);
-
-void render_fun_all(const fractal_utils::fractal_map &map_fractal,
-                    const fractal_utils::wind_base &window, void *custom_ptr,
-                    fractal_utils::fractal_map *map_u8c3_do_not_resize);
+void render(const fractal_utils::fractal_map &map_fractal,
+            const fractal_utils::wind_base &window, void *custom_ptr,
+            fractal_utils::fractal_map *map_u8c3_do_not_resize);
 
 bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
                      const fractal_utils::wind_base &window, void *custom_ptr,
@@ -65,9 +54,8 @@ int main(int argc, char **argV) {
     w.set_window(wind);
   }
 
-  custom_parameters custp{
-      gpu_mem_allocator(2, cols), input_t(), compute_options(),
-      fractal_map::create(rows, cols, sizeof(float)), nullptr};
+  custom_parameters custp{gpu_mem_allocator(2, cols), input_t(),
+                          compute_options(), nullptr};
 
   printf("cutp.alloc.size() = %i\n", custp.alloc.size());
 
@@ -86,7 +74,7 @@ int main(int argc, char **argV) {
   w.frame_file_extension_list = ".tbf";
   // w.map_fractal = fractal_map::create(rows, cols, sizeof(result_t));
   w.callback_compute_fun = compute_fun;
-  w.callback_render_fun = render_fun_all;
+  w.callback_render_fun = render;
   w.callback_export_fun = export_bin_file;
 
   w.show();
@@ -202,74 +190,6 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
          1000 * wtime / map_fractal->element_count());
 }
 
-void render_fun_end_age_only(const fractal_utils::fractal_map &map_fractal,
-                             const fractal_utils::wind_base &__wind,
-                             void *custom_ptr,
-                             fractal_utils::fractal_map *map_u8c3) {
-  using namespace libthreebody;
-
-  const fractal_utils::center_wind<double> &wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
-  custom_parameters *const params =
-      reinterpret_cast<custom_parameters *>(custom_ptr);
-
-  const float_t max_time = params->opt.time_end;
-
-#pragma omp parallel for schedule(static)
-  for (int r = 0; r < map_fractal.rows; r++) {
-    for (int c = 0; c < map_fractal.cols; c++) {
-      params->buffer_float32.at<float>(r, c) =
-          1.0f - float(map_fractal.at<result_t>(r, c).end_time) / max_time;
-    }
-
-    fractal_utils::color_u8c3_many(
-        &params->buffer_float32.at<float>(r, 0),
-        fractal_utils::color_series::parula, map_fractal.cols,
-        &map_u8c3->at<fractal_utils::pixel_RGB>(r, 0));
-  }
-}
-
-void render_fun_end_state_only(const fractal_utils::fractal_map &map_fractal,
-                               const fractal_utils::wind_base &__wind,
-                               void *custom_ptr,
-                               fractal_utils::fractal_map *map_u8c3) {
-  using namespace libthreebody;
-
-  const fractal_utils::center_wind<double> &wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
-  custom_parameters *const params =
-      reinterpret_cast<custom_parameters *>(custom_ptr);
-
-  const float_t max_time = params->opt.time_end;
-
-#pragma omp parallel for schedule(static)
-  for (int r = 0; r < map_fractal.rows; r++) {
-    color_by_collide_u8c3(map_fractal.address<result_t>(r, 0),
-                          map_u8c3->address<fractal_utils::pixel_RGB>(r, 0),
-                          map_fractal.cols, params->opt.time_end);
-  }
-}
-
-void render_fun_all(const fractal_utils::fractal_map &map_fractal,
-                    const fractal_utils::wind_base &__wind, void *custom_ptr,
-                    fractal_utils::fractal_map *map_u8c3) {
-  using namespace libthreebody;
-
-  const fractal_utils::center_wind<double> &wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
-  custom_parameters *const params =
-      reinterpret_cast<custom_parameters *>(custom_ptr);
-
-  const float_t max_time = params->opt.time_end;
-#pragma omp parallel for schedule(static)
-  for (int r = 0; r < map_fractal.rows; r++) {
-    color_by_all(map_fractal.address<result_t>(r, 0),
-                 params->buffer_float32.address<float>(r, 0),
-                 map_u8c3->address<fractal_utils::pixel_RGB>(r, 0),
-                 map_fractal.cols, params->opt.time_end);
-  }
-}
-
 bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
                      const fractal_utils::wind_base &__wind, void *custom_ptr,
                      const fractal_utils::fractal_map &map_u8c3_do_not_resize,
@@ -282,4 +202,19 @@ bool export_bin_file(const fractal_utils::fractal_map &map_fractal,
   return libthreebody::save_fractal_bin_file(
       filename, params->center_input, wind, params->opt, map_fractal,
       params->buffer_export, 2.5 * map_fractal.byte_count());
+}
+
+void render(const fractal_utils::fractal_map &map_fractal,
+            const fractal_utils::wind_base &__wind, void *custom_ptr,
+            fractal_utils::fractal_map *map_u8c3) {
+  using namespace libthreebody;
+
+  const fractal_utils::center_wind<double> &wind =
+      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  custom_parameters *const params =
+      reinterpret_cast<custom_parameters *>(custom_ptr);
+
+  render_universial(map_fractal, {0, 0}, params->buffer_export,
+                    map_fractal.byte_count() * 2.5, map_u8c3,
+                    params->opt.time_end);
 }

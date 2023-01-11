@@ -93,34 +93,6 @@ enum class render_method : uint8_t {
 render_method render_method_str_to_enum(const char *const str,
                                         bool *ok = nullptr) noexcept;
 
-[[deprecated]] void color_by_end_age_u8c3(
-    const result_t *const src, float *const buffer,
-    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
-    bool invert_float = true,
-    fractal_utils::color_series cs =
-        fractal_utils::color_series::parula) noexcept;
-
-[[deprecated]] void color_by_end_distance_u8c3(
-    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
-    int num,
-    const std::array<fractal_utils::pixel_RGB, 3> &color_arr = {
-        fractal_utils::pixel_RGB{62, 38, 168},
-        fractal_utils::pixel_RGB{249, 251, 21},
-        fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
-
-[[deprecated]] void color_by_collide_u8c3(
-    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
-    int num, double max_time,
-    const std::array<fractal_utils::pixel_RGB, 2> &color_arr = {
-        fractal_utils::pixel_RGB{62, 38, 168},
-        fractal_utils::pixel_RGB{69, 203, 137}}) noexcept;
-
-[[deprecated]] void color_by_triangle(
-    const result_t *const src, float *const buffer,
-    fractal_utils::pixel_RGB *const dest_u8c3, int num,
-    fractal_utils::color_series cs =
-        fractal_utils::color_series::parula) noexcept;
-
 struct color_map_all {
   std::array<std::array<float, 2>, 3> float_range_lut_collide;
   std::array<std::array<float, 2>, 3> float_range_lut_nocollide;
@@ -163,7 +135,9 @@ struct color_map_all {
     return method_nocollide[idx];
   }
 };
+
 extern const color_map_all default_color_map_0;
+extern const color_map_all default_color_map_1;
 
 [[deprecated]] void color_by_all(
     const result_t *const src, float *const buffer,

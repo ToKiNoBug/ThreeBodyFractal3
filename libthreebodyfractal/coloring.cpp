@@ -31,21 +31,6 @@ libthreebody::render_method libthreebody::render_method_str_to_enum(
   return {};
 }
 
-void libthreebody::color_by_end_age_u8c3(
-    const result_t *const src, float *const buffer,
-    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
-    bool invert_float, fractal_utils::color_series cs) noexcept {
-  for (int i = 0; i < num; i++) {
-    if (invert_float) {
-      buffer[i] = 1.0f - float(src[i].end_time) / float(max_time);
-    } else {
-      buffer[i] = float(src[i].end_time) / float(max_time);
-    }
-  }
-
-  fractal_utils::color_u8c3_many(buffer, cs, num, dest_u8c3);
-}
-
 inline int compute_distance_idx(
     const Eigen::Array33d &pos,
     std::array<double, 3> *const dest = nullptr) noexcept {
@@ -71,29 +56,6 @@ inline int compute_distance_idx(
   return max_idx;
 }
 
-void libthreebody::color_by_end_distance_u8c3(
-    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
-    int num,
-    const std::array<fractal_utils::pixel_RGB, 3> &color_arr) noexcept {
-  for (int i = 0; i < num; i++) {
-    int idx = compute_distance_idx(src[i].end_state.position);
-    dest_u8c3[i] = color_arr[idx];
-  }
-}
-
-void libthreebody::color_by_collide_u8c3(
-    const result_t *const src, fractal_utils::pixel_RGB *const dest_u8c3,
-    int num, double max_time,
-    const std::array<fractal_utils::pixel_RGB, 2> &color_arr) noexcept {
-  for (int i = 0; i < num; i++) {
-    bool collide = src[i].end_time < max_time;
-
-    int idx = collide;
-
-    dest_u8c3[i] = color_arr[idx];
-  }
-}
-
 const libthreebody::color_map_all libthreebody::default_color_map_0{
     std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 0.333f},
                                         std::array<float, 2>{0.333f, 0.6667f},
@@ -112,6 +74,32 @@ const libthreebody::color_map_all libthreebody::default_color_map_0{
         fractal_utils::color_series::pink},
     std::array<uint8_t, 3>{0xFF, 0xFF, 0xFF},
     std::array<uint8_t, 3>{0xFF, 0xFF, 0xFF},
+    std::array<render_method, 3>{render_method::collide_time,
+                                 render_method::collide_time,
+                                 render_method::collide_time},
+    std::array<render_method, 3>{render_method::triangle,
+                                 render_method::triangle,
+                                 render_method::triangle}};
+
+const libthreebody::color_map_all libthreebody::default_color_map_1{
+    std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 1.0f},
+                                        std::array<float, 2>{0.0f, 1.0f},
+                                        std::array<float, 2>{0.0f, 1.0f}},
+
+    std::array<std::array<float, 2>, 3>{std::array<float, 2>{0.0f, 1.0f},
+                                        std::array<float, 2>{0.0f, 1.0f},
+                                        std::array<float, 2>{0.0f, 1.0f}},
+
+    std::array<fractal_utils::color_series, 3>{
+        fractal_utils::color_series::cool, fractal_utils::color_series::cool,
+        fractal_utils::color_series::cool},
+
+    std::array<fractal_utils::color_series, 3>{
+        fractal_utils::color_series::parula,
+        fractal_utils::color_series::parula,
+        fractal_utils::color_series::parula},
+    std::array<uint8_t, 3>{0, 0, 0},
+    std::array<uint8_t, 3>{5, 5, 5},
     std::array<render_method, 3>{render_method::collide_time,
                                  render_method::collide_time,
                                  render_method::collide_time},
@@ -145,26 +133,6 @@ void libthreebody::color_by_all(const result_t *const src, float *const buffer,
     dest_u8c3[i] =
         fractal_utils::color_u8c3(val * (range[1] - range[0]) + range[0], cs);
   }
-}
-
-void libthreebody::color_by_triangle(const result_t *const src,
-                                     float *const buffer,
-                                     fractal_utils::pixel_RGB *const dest_u8c3,
-                                     int num,
-                                     fractal_utils::color_series cs) noexcept {
-  std::array<double, 3> distance_2;
-  std::array<float, 3> distance;
-  for (int i = 0; i < num; i++) {
-    compute_distance_idx(src[i].end_state.position, &distance_2);
-
-    for (int j = 0; j < 3; j++) {
-      distance[j] = std::sqrt(float(distance_2[j]));
-    }
-
-    buffer[i] = distance[2] / (distance[0] + distance[1]);
-  }
-
-  fractal_utils::color_u8c3_many(buffer, cs, num, dest_u8c3);
 }
 
 #include <limits>
