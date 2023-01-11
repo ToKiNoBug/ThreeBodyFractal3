@@ -7,7 +7,7 @@ endif()
 
 enable_language(CUDA)
 
-# set(CMAKE_CXX_STANDARD 23)
+# set(CMAKE_CXX_STANDARD 20)
 find_package(OpenMP REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)

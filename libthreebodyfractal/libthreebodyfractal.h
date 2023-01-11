@@ -90,6 +90,9 @@ enum class render_method : uint8_t {
   triangle
 };
 
+render_method render_method_str_to_enum(const char *const str,
+                                        bool *ok = nullptr) noexcept;
+
 [[deprecated]] void color_by_end_age_u8c3(
     const result_t *const src, float *const buffer,
     fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,

@@ -51,9 +51,8 @@ bool run_render(const render_input &ri) noexcept {
     return false;
   }
 
-  color_by_all(map_result.address<result_t>(0), (float *)buffer,
-               img_u8c3.address<pixel_RGB>(0), map_result.element_count(),
-               opt.time_end, cm);
+  render_universial(map_result, {0, 0}, buffer, buffer_cap, &img_u8c3,
+                    opt.time_end, cm);
 
   if (!write_png(ri.png_file.c_str(), color_space::u8c3, img_u8c3)) {
     free(buffer);

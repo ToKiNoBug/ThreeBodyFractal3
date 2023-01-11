@@ -69,18 +69,10 @@ int main(int argc, char **argV) {
       gpu_mem_allocator(2, cols), input_t(), compute_options(),
       fractal_map::create(rows, cols, sizeof(float)), nullptr};
 
-  printf("size of cutp.alloc.size = %i\n", custp.alloc.size());
-  {
-#ifdef WIN32
-    void *const buffer =
-        _aligned_malloc(sizeof(result_t) * rows * cols * 2.5, 32);
-#else
-    void *const buffer =
-        aligned_alloc(32, sizeof(result_t) * rows * cols * 2.5);
-#endif
+  printf("cutp.alloc.size() = %i\n", custp.alloc.size());
 
-    custp.buffer_export = buffer;
-  }
+  custp.buffer_export = fractal_utils::allocate_memory_aligned(
+      32, sizeof(result_t) * rows * cols * 2.5);
 
   omp_set_num_teams(std::thread::hardware_concurrency() + custp.alloc.size());
 

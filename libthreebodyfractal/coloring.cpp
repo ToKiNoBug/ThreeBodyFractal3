@@ -1,6 +1,35 @@
 #include <immintrin.h>
 
+#include <string_view>
+
 #include "libthreebodyfractal.h"
+
+libthreebody::render_method libthreebody::render_method_str_to_enum(
+    const char *const __str, bool *ok) noexcept {
+  std::string_view str(__str);
+
+  if (ok != nullptr) *ok = true;
+
+  if (str == "collide_time") {
+    return render_method::collide_time;
+  }
+
+  if (str == "end_distance") {
+    return render_method::end_distance;
+  }
+
+  if (str == "collide_binary") {
+    return render_method::collide_binary;
+  }
+
+  if (str == "triangle") {
+    return render_method::triangle;
+  }
+
+  if (ok != nullptr) *ok = false;
+
+  return {};
+}
 
 void libthreebody::color_by_end_age_u8c3(
     const result_t *const src, float *const buffer,
@@ -245,14 +274,26 @@ bool libthreebody::render_universial(
       const uint8_t nid = color_map.normalize_id(collide, idx_3);
 
       float &val = map_float.at<float>(r, c);
+
+      const float val_0 = val;
       if (nid < 6) {
         const float min = range_arr[nid].min;
         const float max = range_arr[nid].max;
-
-        val = (val - min) / (max - min) + min;
+        if (max > min) {
+          val = (val - min) / (max - min);
+        }
       }
+      const float val_1 = val;
       const auto &range = color_map.range(collide, idx_3);
       val = (range[1] - range[0]) * val + range[0];
+
+      if (val < 0 || val > 1) {
+        printf(
+            "Error : val is not in range [0,1] : val_0 = %F, val_1 = %F, val = "
+            "%F, range = [%F, %F]\n",
+            val_0, val_1, val, range_arr[nid].min, range_arr[nid].max);
+        exit(2);
+      }
 
       img_u8c3->at<fractal_utils::pixel_RGB>(r, c) =
           fractal_utils::color_u8c3(val, color_source_t_arr[offset]);
@@ -267,7 +308,8 @@ bool libthreebody::render_universial(
 
 bool parse_range_cs_pair(const nlohmann::json &object,
                          std::array<float, 2> *range,
-                         fractal_utils::color_series *cs) noexcept {
+                         fractal_utils::color_series *cs, uint8_t *normalize_id,
+                         libthreebody::render_method *rm) noexcept {
   using njson = nlohmann::json;
 
   if (!object.contains("range") || !object.at("range").is_array()) {
@@ -311,8 +353,38 @@ bool parse_range_cs_pair(const nlohmann::json &object,
     return false;
   }
 
-  // printf("color serie = %s\n", fractal_utils::color_series_enum_to_str(*cs));
-#warning here
+  if (!object.contains("normalize_id") ||
+      !object.at("normalize_id").is_number_integer()) {
+    printf("\nError : no valid value for integer \"normalize_id\".\n");
+    return false;
+  }
+
+  int nid = object.at("normalize_id");
+
+  if ((nid >= 0 && nid < 6) || (nid == 0xFF)) {
+    *normalize_id = nid;
+  } else {
+    printf(
+        "\nError : invalid value for integer \"normalize_id\" : %i goes out of "
+        "range {0,1,2,3,4,5,255}.\n",
+        nid);
+    return false;
+  }
+
+  if (!object.contains("render_method") ||
+      !object.at("render_method").is_string()) {
+    printf("\nError : no valid value for string \"render_method\".\n");
+    return false;
+  }
+  const std::string rm_str = object.at("render_method");
+
+  *rm = libthreebody::render_method_str_to_enum(rm_str.data(), &ok);
+
+  if (!ok) {
+    printf("\nError : invalid render method named \"%s\"\n", rm_str.data());
+    return false;
+  }
+
   return true;
 }
 
@@ -363,15 +435,17 @@ bool libthreebody::load_color_map_all_from_file(
   }
 
   for (int idx = 0; idx < 3; idx++) {
-    if (!parse_range_cs_pair(obj.at("collide")[idx],
-                             &dest->float_range_lut_collide[idx],
-                             &dest->cs_lut_collide[idx])) {
+    if (!parse_range_cs_pair(
+            obj.at("collide")[idx], &dest->float_range_lut_collide[idx],
+            &dest->cs_lut_collide[idx], &dest->normalize_id_collide[idx],
+            &dest->method_collide[idx])) {
       printf("\nError : failed to parse color_map_all.\n");
       return false;
     }
-    if (!parse_range_cs_pair(obj.at("nocollide")[idx],
-                             &dest->float_range_lut_nocollide[idx],
-                             &dest->cs_lut_nocollide[idx])) {
+    if (!parse_range_cs_pair(
+            obj.at("nocollide")[idx], &dest->float_range_lut_nocollide[idx],
+            &dest->cs_lut_nocollide[idx], &dest->normalize_id_nocollide[idx],
+            &dest->method_nocollide[idx])) {
       printf("\nError : failed to parse color_map_all.\n");
       return false;
     }
