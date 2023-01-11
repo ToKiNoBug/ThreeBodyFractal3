@@ -53,7 +53,7 @@ compute->add_option("--xspan", ci.x_span, "X span (default=Y span *cols/rows")
 
   render_input ri;
 
-  render->add_option("--source", ri.tbf_file, ".tbf file used as data source")
+  render->add_option("source", ri.tbf_file, ".tbf file used as data source")
       ->required()
       ->check(CLI::ExistingFile);
   render->add_option("-o", ri.png_file, "Exported png file.")
