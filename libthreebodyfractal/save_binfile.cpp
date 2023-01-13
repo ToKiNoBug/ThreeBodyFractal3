@@ -1,3 +1,4 @@
+#define LZMA_API_STATIC
 #include <lzma.h>
 #include <stdio.h>
 

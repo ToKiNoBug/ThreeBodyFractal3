@@ -151,21 +151,19 @@ libthreebody::input_t get_center_input(int argc,
 
   bool ok = true;
   if (is_paraD3B3) {
-    ok = load_parameters_from_D3B3(src_filename.c_str(), &input.mass,
-                                   &input.beg_state);
+    ok = load_parameters_from_D3B3(argv[3], &input.mass, &input.beg_state);
   }
 
   if (is_tbf) {
     fractal_utils::binfile binfile;
-    binfile.parse_from_file(src_filename.c_str());
+    binfile.parse_from_file(argv[3]);
 
     ok = libthreebody::fractal_bin_file_get_information(binfile, nullptr,
                                                         nullptr, &input);
   }
 
   if (!ok) {
-    printf("\nError : failed to load parameters from file %s.\n",
-           src_filename.c_str());
+    printf("\nError : failed to load parameters from file %s.\n", argv[3]);
     exit(1);
     return {};
   }
@@ -208,9 +206,11 @@ void render(const fractal_utils::fractal_map &map_fractal,
             const fractal_utils::wind_base &__wind, void *custom_ptr,
             fractal_utils::fractal_map *map_u8c3) {
   using namespace libthreebody;
+  /*
+    const fractal_utils::center_wind<double> &wind =
+        dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
 
-  const fractal_utils::center_wind<double> &wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+        */
   custom_parameters *const params =
       reinterpret_cast<custom_parameters *>(custom_ptr);
 
