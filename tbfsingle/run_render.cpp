@@ -18,7 +18,7 @@ bool run_render(const render_input &ri) noexcept {
   }
 
   binfile binfile;
-  bool ok = true;
+  // bool ok = true;
   if (!binfile.parse_from_file(ri.tbf_file.c_str())) {
     printf("\nError : failed to parse .tbf file.\n");
     return false;

@@ -33,6 +33,8 @@ set(libnbtpp_build_dir ${CMAKE_BINARY_DIR}/3rdParty/libnbtplusplus/build)
 
 set(libnbtpp_install_dir ${CMAKE_BINARY_DIR}/3rdParty/libnbtplusplus/install)
 
+# include(${CMAKE_SOURCE_DIR}/cmake/add_compiler_path_to_prefix.cmake)
+
 set(command_args
     -G
     ${CMAKE_GENERATOR}
@@ -47,7 +49,7 @@ set(command_args
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
     -DNBT_BUILD_TESTS:BOOL=FALSE
     -DNBT_BUILD_SHARED:BOOL=FALSE
-    -DNBT_USE_ZLIB:BOOL=TRUE)
+    -DNBT_USE_ZLIB:BOOL=FALSE)
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
    OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
