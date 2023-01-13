@@ -41,7 +41,7 @@ bool run_render(const render_input &ri) noexcept {
   fractal_map map_result = fractal_map::create(rows, cols, sizeof(result_t));
 
   const size_t buffer_cap = map_result.byte_count() * 2.5;
-  void *buffer = aligned_alloc(32, buffer_cap);
+  void *buffer = fractal_utils::allocate_memory_aligned(32, buffer_cap);
 
   fractal_map img_u8c3 = fractal_map::create(rows, cols, 3);
 

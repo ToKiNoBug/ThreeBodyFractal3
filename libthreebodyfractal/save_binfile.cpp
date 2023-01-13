@@ -1,8 +1,7 @@
 #include <lzma.h>
 #include <stdio.h>
 
-#include <map>
-#include <nbt.hpp>
+#include <sstream>
 
 #include "libthreebodyfractal.h"
 
@@ -52,9 +51,8 @@ bool libthreebody::save_fractal_bin_file(
   using namespace fractal_utils;
 
   if (buffer_bytes < mat_result.byte_count() * 2) {
-    printf(
-        "\nError : not enough buffer. The buffer should be at least 2 time "
-        "bigger than the mat_result.\n");
+    printf("\nError : not enough buffer. The buffer should be at least 2 time "
+           "bigger than the mat_result.\n");
     return false;
   }
 
@@ -188,6 +186,9 @@ bool xz_compress(uint8_t *const dest, const uint8_t *const src,
   return true;
 }
 
+#include <libNBT++/io/stream_writer.h>
+#include <libNBT++/nbt_tags.h>
+
 bool fractal_bin_file_write_basical_information(
     FILE *const fp, uint8_t *const buffer_A, const size_t buffer_A_capacity,
     uint8_t *const buffer_B, const size_t buffer_B_capacity,
@@ -202,13 +203,15 @@ bool fractal_bin_file_write_basical_information(
 
   using namespace nbt;
 
+  nbt::tag_compound tags;
+
   // printf("line = %i\n", __LINE__);
   // auto &tags = nbt.data->tags;
-  TagCompound tags;
+  // tag_compound tags;
   // printf("line = %i\n", __LINE__);
   //  write matrix size
-  tags["rows"] = TagLong(mat_result.rows);
-  tags["cols"] = TagLong(mat_result.cols);
+  tags["rows"] = tag_long(mat_result.rows);
+  tags["cols"] = tag_long(mat_result.cols);
   // printf("line = %i\n", __LINE__);
   //  write center_input
   {
@@ -220,48 +223,75 @@ bool fractal_bin_file_write_basical_information(
            9 * sizeof(double));
     memcpy(beg_state.data() + 9, center_input.beg_state.velocity.data(),
            9 * sizeof(double));
-    tags["center_input"] = TagCompound{{"mass", TagList(mass)},
-                                       {"initial_state", TagList(beg_state)}};
-  }
+
+    tag_list temp_18 = tag_list::of<tag_double>({});
+
+    for (double val : beg_state) {
+      temp_18.emplace_back<tag_double>(val);
+    }
+
+    tag_compound ci{{}};
+    ci.emplace<tag_list>("mass", tag_list{mass[0], mass[1], mass[2]});
+    ci.emplace<tag_list>("initial_state", temp_18);
+
+    tags.emplace<tag_compound>("center_input", ci);
+  };
+
   // printf("line = %i\n", __LINE__);
   //  write window
-  tags["window"] =
-      TagCompound{{"center", TagCompound{{"x", TagDouble(wind.center[0])},
-                                         {"y", TagDouble(wind.center[1])}}},
-                  {"x_span", TagDouble(wind.x_span)},
-                  {"y_span", TagDouble(wind.y_span)}};
+  {
+    tag_compound window;
+    window.emplace<tag_compound>(
+        "center", tag_compound{std::pair<std::string, value_initializer>{
+                                   "x", tag_double(wind.center[0])},
+                               std::pair<std::string, value_initializer>{
+                                   "y", tag_double(wind.center[1])}});
+
+    window.emplace<tag_double>("x_span", tag_double(wind.x_span));
+    window.emplace<tag_double>("y_span", tag_double(wind.y_span));
+
+    tags.emplace<tag_compound>("window", window);
+  }
+  /*
+  tags["window"] = tag_compound{
+      std::pair<std::string, value_initializer>{
+          "center", tag_compound{std::pair<std::string, value_initializer>{
+                                     "x", tag_double(wind.center[0])},
+                                 std::pair<std::string, value_initializer>{
+                                     "y", tag_double(wind.center[1])}}},
+      std::pair<std::string, value_initializer>{"x_span",
+                                                tag_double(wind.x_span)},
+      std::pair<std::string, value_initializer>{"y_span",
+                                                tag_double(wind.y_span)}};
+                                                */
   // printf("line = %i\n", __LINE__);
   //  write compute_options
-  tags["compute_option"] =
-      TagCompound{{"time_end", TagDouble(opt.time_end)},
-                  {"max_relative_error", TagDouble(opt.max_relative_error)},
-                  {"step_guess", TagDouble(opt.step_guess)}};
+  tags.emplace<tag_compound>(
+      "compute_option",
+      tag_compound{{"time_end", tag_double(opt.time_end)},
+                   {"max_relative_error", tag_double(opt.max_relative_error)},
+                   {"step_guess", tag_double(opt.step_guess)}});
 
   // printf("line = %i\n", __LINE__);
 
-  nbt::NBT nbt{"basical_information", tags};
-  /*
   std::stringstream ss;
-  ss.str().reserve(4096);
-  // memset(ss.str().data(), 0xFF, 4096);
-  ss.clear();
-  nbt.encode(ss);
-  // printf("line = %i\n", __LINE__);
-  printf("size = %i.\n", (int)ss.str().size());
-  // printf("line = %i\n", __LINE__);
-  data_block blk;
-  blk.tag = fractal_binfile_tag::basical_information;
-  blk.data = const_cast<char *>(ss.str().data());
-  blk.bytes = ss.str().size();
-  */
+  nbt::io::stream_writer sw(ss);
 
-  void *buffer_B_cur = buffer_B;
-  nbt.encode(&buffer_B_cur, (void *)(buffer_B_capacity + buffer_B));
+  sw.write_tag("basical_information", tags);
+
+  const auto &buf = ss.str();
+
+  if (buf.size() > buffer_B_capacity) {
+    printf("\nError : Buffer not enough. Requires %zu bytes.\n", buf.size());
+    return false;
+  }
+
+  memcpy(buffer_B, buf.data(), buf.size());
 
   data_block blk;
   blk.tag = fractal_binfile_tag::basical_information;
   blk.data = buffer_B;
-  blk.bytes = (uint8_t *)buffer_B_cur - buffer_B;
+  blk.bytes = buf.size();
 
   // printf("size = %i.\n", (int)blk.bytes);
 
@@ -307,7 +337,7 @@ bool fractal_bin_file_write_end_state(
   success = write_data_block(fp, blk);
   if (!success) {
     printf("\nError : write_data_block failed.\n");
-    printf("blk.bytes = %lu\n", blk.bytes);
+    printf("blk.bytes = %zu\n", blk.bytes);
     fclose(fp);
     return false;
   }

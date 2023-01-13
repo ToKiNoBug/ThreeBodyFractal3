@@ -31,7 +31,7 @@ int main() {
 
   const size_t buffer_bytes = result.byte_count() * 2.5;
 
-  void* buffer = aligned_alloc(32, buffer_bytes);
+  void *buffer = fractal_utils::allocate_memory_aligned(32, buffer_bytes);
 
   ok = fractal_bin_file_get_result(file, &result, buffer, buffer_bytes);
   if (!ok) {

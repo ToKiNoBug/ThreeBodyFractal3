@@ -2,16 +2,16 @@
 
 #include "libthreebodyfractal.h"
 
-std::array<int, 2> get_size(const fractal_utils::binfile&,
-                            libthreebody::compute_options* opt) noexcept;
+std::array<int, 2> get_size(const fractal_utils::binfile &,
+                            libthreebody::compute_options *opt) noexcept;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc < 2) {
     printf("\nError : expected filename.\n");
     return 1;
   }
 
-  const char* const tbf_filename = argv[1];
+  const char *const tbf_filename = argv[1];
 
   fractal_utils::binfile binfile;
 
@@ -30,7 +30,8 @@ int main(int argc, char** argv) {
   fractal_utils::fractal_map map_result =
       fractal_utils::fractal_map::create(rows, cols, sizeof(result_t));
 
-  void* const buffer = aligned_alloc(32, map_result.byte_count() * 2.5);
+  void *const buffer =
+      fractal_utils::allocate_memory_aligned(32, map_result.byte_count() * 2.5);
 
   ok = fractal_bin_file_get_result(binfile, &map_result, buffer,
                                    map_result.byte_count() * 2.5);
@@ -59,8 +60,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-std::array<int, 2> get_size(const fractal_utils::binfile& binfile,
-                            libthreebody::compute_options* opt) noexcept {
+std::array<int, 2> get_size(const fractal_utils::binfile &binfile,
+                            libthreebody::compute_options *opt) noexcept {
   size_t rows, cols;
 
   const bool ok = libthreebody::fractal_bin_file_get_information(

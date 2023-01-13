@@ -2,7 +2,7 @@
 
 # list(APPEND CMAKE_PREFIX_PATH "D:/Git/build-FractalUtils-win/install")
 
-set(version_fu 2.0.0)
+set(version_fu 2.0.1)
 
 find_package(fractal_utils ${version_fu} COMPONENTS core_utils png_utils)
 
@@ -29,9 +29,11 @@ execute_process(
 
 message(STATUS "CMake is configuring fractal_utils ...")
 
-message(STATUS "CMAKE_GENERATOR = " ${CMAKE_GENERATOR})
-message(STATUS "CMAKE_MAKE_PROGRAM = " ${CMAKE_MAKE_PROGRAM})
-message(STATUS "CMAKE_RC_COMPILER = " ${CMAKE_RC_COMPILER})
+# message(STATUS "CMAKE_GENERATOR = " ${CMAKE_GENERATOR})
+
+# message(STATUS "CMAKE_MAKE_PROGRAM = " ${CMAKE_MAKE_PROGRAM})
+
+# message(STATUS "CMAKE_RC_COMPILER = " ${CMAKE_RC_COMPILER})
 
 # return() set(command_temp "cmake -G ${CMAKE_GENERATOR} -S
 # ${CMAKE_SOURCE_DIR}/3rdParty/FractalUtils -B

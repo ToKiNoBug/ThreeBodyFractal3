@@ -9,17 +9,19 @@ enable_language(CUDA)
 
 # set(CMAKE_CXX_STANDARD 20)
 find_package(OpenMP REQUIRED)
+find_package(PNG REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
+# include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
-
-find_package(PNG REQUIRED)
+include(${CMAKE_SOURCE_DIR}/cmake/configure_libnbtplusplus.cmake)
 
 find_package(
   fractal_utils ${version_fu}
   COMPONENTS core_utils png_utils
   REQUIRED)
+
+find_package(libNBT++ ${version_libnbtpp} REQUIRED)
 
 find_package(LibLZMA REQUIRED)
 
@@ -37,10 +39,9 @@ target_include_directories(
   threebodyfractal PUBLIC ${CMAKE_SOURCE_DIR}/libthreebody
                           ${fractal_utils_INCLUDE_DIR})
 target_include_directories(
-  threebodyfractal PRIVATE ${LIBLZMA_INCLUDE_DIRS} ${cpp_nbt_include_dir}
-                           ${nlohmann_json_include_dir})
+  threebodyfractal PRIVATE ${LIBLZMA_INCLUDE_DIRS} ${nlohmann_json_include_dir})
 
-target_compile_features(threebodyfractal PRIVATE cxx_std_23)
+target_compile_features(threebodyfractal PRIVATE cxx_std_20)
 
 # target_compile_features(${target} PRIVATE cxx_std_23)
 target_link_libraries(
@@ -51,7 +52,8 @@ target_link_libraries(
          fractal_utils::core_utils
          fractal_utils::png_utils
          cudathreebody
-         LibLZMA::LibLZMA)
+         LibLZMA::LibLZMA
+         libNBT++::NBT++)
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
    OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
@@ -64,15 +66,12 @@ if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
                                                   /std:c++${CMAKE_CXX_STANDARD})
 endif()
 
-find_package(Boost COMPONENTS container)
-
-if(${BOOST_FOUND})
-  message(STATUS "Boost include dirs = " ${Boost_INCLUDE_DIRS})
-  target_include_directories(threebodyfractal PRIVATE ${Boost_INCLUDE_DIRS})
-else()
-  message(STATUS "Boost::container not found. Use std::map instead")
-  target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
-endif()
+# find_package(Boost COMPONENTS container) if(${BOOST_FOUND}) message(STATUS
+# "Boost include dirs = " ${Boost_INCLUDE_DIRS})
+# target_include_directories(threebodyfractal PRIVATE ${Boost_INCLUDE_DIRS})
+# else() message(STATUS "Boost::container not found. Use std::map instead")
+# target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
+# endif()
 
 if(NOT ${tb_build_examples})
   return()
