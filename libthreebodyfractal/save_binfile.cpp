@@ -2,6 +2,7 @@
 #include <lzma.h>
 #include <stdio.h>
 
+#include <filesystem>
 #include <sstream>
 
 #include "libthreebodyfractal.h"
@@ -190,18 +191,11 @@ bool xz_compress(uint8_t *const dest, const uint8_t *const src,
 #include <libNBT++/io/stream_writer.h>
 #include <libNBT++/nbt_tags.h>
 
-bool fractal_bin_file_write_basical_information(
-    FILE *const fp, uint8_t *const buffer_A, const size_t buffer_A_capacity,
-    uint8_t *const buffer_B, const size_t buffer_B_capacity,
-    const libthreebody::input_t &center_input,
-    const fractal_utils::center_wind<double> &wind,
-    const libthreebody::compute_options &opt,
-    const fractal_utils::fractal_map &mat_result) noexcept {
-  using namespace libthreebody;
-  using namespace fractal_utils;
-
-  // printf("line = %i\n", __LINE__);
-
+void encode_nbt(const libthreebody::input_t &center_input,
+                const fractal_utils::center_wind<double> &wind,
+                const libthreebody::compute_options &opt,
+                const std::array<size_t, 2> &size_rc,
+                std::stringstream &ss) noexcept {
   using namespace nbt;
 
   nbt::tag_compound tags;
@@ -211,15 +205,15 @@ bool fractal_bin_file_write_basical_information(
   // tag_compound tags;
   // printf("line = %i\n", __LINE__);
   //  write matrix size
-  tags["rows"] = tag_long(mat_result.rows);
-  tags["cols"] = tag_long(mat_result.cols);
+  tags["rows"] = tag_long(size_rc[0]);
+  tags["cols"] = tag_long(size_rc[1]);
   // printf("line = %i\n", __LINE__);
   //  write center_input
   {
-    std::vector<double> mass(3);
+    std::array<double, 3> mass;
     memcpy(mass.data(), center_input.mass.data(), 3 * sizeof(double));
 
-    std::vector<double> beg_state(18);
+    std::array<double, 18> beg_state;
     memcpy(beg_state.data(), center_input.beg_state.position.data(),
            9 * sizeof(double));
     memcpy(beg_state.data() + 9, center_input.beg_state.velocity.data(),
@@ -253,18 +247,6 @@ bool fractal_bin_file_write_basical_information(
 
     tags.emplace<tag_compound>("window", window);
   }
-  /*
-  tags["window"] = tag_compound{
-      std::pair<std::string, value_initializer>{
-          "center", tag_compound{std::pair<std::string, value_initializer>{
-                                     "x", tag_double(wind.center[0])},
-                                 std::pair<std::string, value_initializer>{
-                                     "y", tag_double(wind.center[1])}}},
-      std::pair<std::string, value_initializer>{"x_span",
-                                                tag_double(wind.x_span)},
-      std::pair<std::string, value_initializer>{"y_span",
-                                                tag_double(wind.y_span)}};
-                                                */
   // printf("line = %i\n", __LINE__);
   //  write compute_options
   tags.emplace<tag_compound>(
@@ -275,10 +257,76 @@ bool fractal_bin_file_write_basical_information(
 
   // printf("line = %i\n", __LINE__);
 
-  std::stringstream ss;
+  ss.str("");
   nbt::io::stream_writer sw(ss);
-
   sw.write_tag("basical_information", tags);
+}
+
+bool libthreebody::save_fractal_basical_information_binary(
+    std::string_view filename, const input_t &center_input,
+    const fractal_utils::center_wind<double> &wind, const compute_options &opt,
+    const std::array<size_t, 2> &size_rc) noexcept {
+
+  const std::filesystem::path path(filename.data());
+
+  if (path.extension() != ".tbf" && path.extension() != ".nbt") {
+    printf("\nError : unexpected extension name. Expected .tbf or .nbt\n");
+    return false;
+  }
+
+  std::stringstream ss;
+  encode_nbt(center_input, wind, opt, size_rc, ss);
+  auto buf = ss.str();
+
+  FILE *const fp = fopen(filename.data(), "wb");
+
+  if (fp == NULL) {
+    printf("\nFailed to create file %s.\n", filename.data());
+    fclose(fp);
+    return false;
+  }
+
+  if (path.extension() == ".tbf") {
+    // write file header
+    fractal_utils::file_header header;
+
+    fwrite(&header, 1, sizeof(header), fp);
+    fractal_utils::data_block blk;
+
+    blk.tag = fractal_binfile_tag::basical_information;
+    blk.data = reinterpret_cast<void *>(buf.data());
+    blk.bytes = buf.size();
+    if (!fractal_utils::write_data_block(fp, blk)) {
+      printf("\nError : write_data_block failed.\n");
+      fclose(fp);
+      return false;
+    }
+  } else {
+    fwrite(buf.data(), 1, buf.size(), fp);
+    fclose(fp);
+  }
+
+  fclose(fp);
+  return true;
+
+  // export as json
+}
+
+bool fractal_bin_file_write_basical_information(
+    FILE *const fp, uint8_t *const buffer_A, const size_t buffer_A_capacity,
+    uint8_t *const buffer_B, const size_t buffer_B_capacity,
+    const libthreebody::input_t &center_input,
+    const fractal_utils::center_wind<double> &wind,
+    const libthreebody::compute_options &opt,
+    const fractal_utils::fractal_map &mat_result) noexcept {
+  using namespace libthreebody;
+  using namespace fractal_utils;
+
+  // printf("line = %i\n", __LINE__);
+
+  std::stringstream ss;
+
+  encode_nbt(center_input, wind, opt, {mat_result.rows, mat_result.cols}, ss);
 
   const auto &buf = ss.str();
 

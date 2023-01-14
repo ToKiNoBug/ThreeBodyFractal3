@@ -38,6 +38,23 @@ enum fractal_binfile_tag : int64_t {
   matrix_iterate_fail_time = 6
 };
 
+bool save_fractal_basical_information_binary(
+    std::string_view filename, const input_t &center_input,
+    const fractal_utils::center_wind<double> &wind, const compute_options &opt,
+    const std::array<size_t, 2> &size_rc) noexcept;
+
+bool save_fractal_basical_information_json(
+    std::string_view filename, const input_t &center_input,
+    const fractal_utils::center_wind<double> &wind, const compute_options &opt,
+    const std::array<size_t, 2> &size_rc) noexcept;
+
+bool load_fractal_basical_information_json(
+    std::string_view filename, size_t *const rows_dest = nullptr,
+    size_t *const cols_dest = nullptr,
+    input_t *const center_input_dest = nullptr,
+    fractal_utils::center_wind<double> *const wind_dest = nullptr,
+    compute_options *const opt_dest = nullptr) noexcept;
+
 bool save_fractal_bin_file(std::string_view filename,
                            const input_t &center_input,
                            const fractal_utils::center_wind<double> &wind,
@@ -139,10 +156,11 @@ struct color_map_all {
 extern const color_map_all default_color_map_0;
 extern const color_map_all default_color_map_1;
 
-[[deprecated]] void color_by_all(
-    const result_t *const src, float *const buffer,
-    fractal_utils::pixel_RGB *const dest_u8c3, int num, double max_time,
-    const color_map_all &color_map = default_color_map_0) noexcept;
+[[deprecated]] void
+color_by_all(const result_t *const src, float *const buffer,
+             fractal_utils::pixel_RGB *const dest_u8c3, int num,
+             double max_time,
+             const color_map_all &color_map = default_color_map_0) noexcept;
 
 bool load_color_map_all_from_file(const char *const filename,
                                   color_map_all *const dest) noexcept;
@@ -154,6 +172,6 @@ bool render_universial(
     double max_time,
     const color_map_all &color_map = default_color_map_0) noexcept;
 
-}  // namespace libthreebody
+} // namespace libthreebody
 
-#endif  // THREEBODYFRACTAL3_THREEBODYFRACTAL_H
+#endif // THREEBODYFRACTAL3_THREEBODYFRACTAL_H

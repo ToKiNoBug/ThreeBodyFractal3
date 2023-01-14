@@ -13,6 +13,7 @@ find_package(PNG REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_libnbtplusplus.cmake)
+
 # include(${CMAKE_SOURCE_DIR}/cmake/configure_cpp_nbt.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 
@@ -33,10 +34,12 @@ add_library(
   load_binfile.cpp
   memory_resource.h
   memory_resource.cpp
-  coloring.cpp)
+  coloring.cpp
+  save_load_json.cpp
+)
 
 target_include_directories(threebodyfractal PUBLIC ${fractal_utils_INCLUDE_DIR}
-                                                   ${CMAKE_CURRENT_SOURCE_DIR})
+  ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(
   threebodyfractal PRIVATE ${LIBLZMA_INCLUDE_DIRS} ${nlohmann_json_include_dir})
 
@@ -46,21 +49,21 @@ target_compile_features(threebodyfractal PUBLIC cxx_std_20)
 target_link_libraries(
   threebodyfractal
   PUBLIC OpenMP::OpenMP_CXX
-         threebody
-         PNG::PNG
-         fractal_utils::core_utils
-         fractal_utils::png_utils
-         cudathreebody
-         LibLZMA::LibLZMA
-         libNBT++::NBT++)
+  threebody
+  PNG::PNG
+  fractal_utils::core_utils
+  fractal_utils::png_utils
+  cudathreebody
+  LibLZMA::LibLZMA
+  libNBT++::NBT++)
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-   OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+  OR(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
   target_compile_options(threebodyfractal PRIVATE -mavx -mavx2 -mfma)
 endif()
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-   OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+  OR(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
   target_compile_options(threebodyfractal PRIVATE /arch:AVX /arch:AVX2)
   target_compile_options(threebodyfractal PUBLIC /wd4819 /wd4068)
 endif()
@@ -71,7 +74,6 @@ endif()
 # else() message(STATUS "Boost::container not found. Use std::map instead")
 # target_compile_definitions(threebodyfractal PRIVATE "-DNBT_MAP_TYPE=std::map")
 # endif()
-
 if(NOT ${tb_build_examples})
   return()
 endif()
@@ -89,12 +91,12 @@ target_compile_options(test_tbf_load PRIVATE ${ThreebodyFractal_lto_options})
 add_executable(test_tbf_other_input test_tbf_other_input.cpp)
 target_link_libraries(test_tbf_other_input PRIVATE threebodyfractal)
 target_compile_options(test_tbf_other_input
-                       PRIVATE ${ThreebodyFractal_lto_options})
+  PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_tbf_allocator test_allocator.cpp)
 target_link_libraries(test_tbf_allocator PRIVATE threebodyfractal)
 target_compile_options(test_tbf_allocator
-                       PRIVATE ${ThreebodyFractal_lto_options})
+  PRIVATE ${ThreebodyFractal_lto_options})
 
 add_executable(test_render test_render.cpp)
 target_link_libraries(test_render PRIVATE threebodyfractal)

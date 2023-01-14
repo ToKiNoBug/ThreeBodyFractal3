@@ -66,10 +66,15 @@ bool libthreebody::fractal_bin_file_get_information(
   ss.write((const char *)info_block->data, info_block->bytes);
 
   nbt::io::stream_reader sr(ss);
+  std::pair<std::string, std::unique_ptr<nbt::tag>> pair("", nullptr);
 
-  auto pair = sr.read_tag();
+  try {
+    pair = sr.read_tag();
+  } catch (...) {
 
-  if (pair.first != "basical_information") {
+    printf("\nError : function fractal_bin_file_get_information failed to "
+           "parse nbt data.\n");
+    return false;
   }
 
   const nbt::tag_compound &info = pair.second->as<nbt::tag_compound>();

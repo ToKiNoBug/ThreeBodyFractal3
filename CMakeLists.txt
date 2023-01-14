@@ -6,18 +6,20 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/compile_commands.json)
   file(REMOVE ${CMAKE_SOURCE_DIR}/compile_commands.json)
 endif()
 
-#set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   if(NOT DEFINED threebodyfractal_eigen_include_dir)
     set(threebodyfractal_eigen_include_dir "D:/CppLibs/eigen-3.4.0")
   endif()
+
   set(EIGEN3_INCLUDE_DIR ${threebodyfractal_eigen_include_dir})
-  #include_directories(${threebodyfractal_eigen_include_dir})
+
+# include_directories(${threebodyfractal_eigen_include_dir})
 else()
   find_package(Eigen3 REQUIRED)
-  #include_directories(${EIGEN3_INCLUDE_DIR})
+
+  # include_directories(${EIGEN3_INCLUDE_DIR})
 endif()
 
 if(NOT DEFINED CMAKE_PREFIX_PATH)
@@ -38,5 +40,6 @@ add_subdirectory(libthreebodyfractal)
 add_subdirectory(threebodyzoomer)
 add_subdirectory(tbfsingle)
 add_subdirectory(tbf-task-gen)
+add_subdirectory(tbfcvt)
 
 # add_subdirectory(old)
