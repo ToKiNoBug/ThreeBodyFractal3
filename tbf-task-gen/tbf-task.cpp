@@ -1,9 +1,11 @@
 #include "tbf-task.h"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+using std::cout, std::endl;
 
 bool save_task_to_json(const task_input &ti,
                        std::string_view filename) noexcept {
@@ -23,19 +25,138 @@ bool save_task_to_json(const task_input &ti,
   std::ofstream ofs(filename.data());
 
   if (!ofs) {
-    std::cout << "Failed to open file " << filename << std::endl;
+    cout << "Failed to open file " << filename << endl;
     ofs.close();
     return false;
   }
-  try {
 
+  try {
     ofs << jo;
   } catch (std::runtime_error re) {
-    std::cout << "Failed to write json. Error detail : " << re.what()
-              << std::endl;
+    cout << "Failed to write json. Error detail : " << re.what() << endl;
     ofs.close();
     return false;
   }
   ofs.close();
+  return true;
+}
+
+bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
+  using njson = nlohmann::json;
+
+  njson jo;
+
+  {
+    std::ifstream ifs(filename.data());
+
+    if (!ifs) {
+      cout << "Failed to open file " << filename << endl;
+      ifs.close();
+      return false;
+    }
+
+    try {
+      ifs >> jo;
+    } catch (std::runtime_error re) {
+      cout << "Failed to parse json. Error detail : " << re.what() << endl;
+      ifs.close();
+      return false;
+    }
+
+    ifs.close();
+  }
+
+  if (!jo.contains("zoom_speed") || !jo.at("zoom_speed").is_number()) {
+    cout << "No valid value for \"zoom_speed\"" << endl;
+    return false;
+  }
+
+  {
+    const double zs = jo.at("zoom_speed");
+    if (zs <= 0) {
+      cout << "Error : zoom_speed = " << zs
+           << ", but expected a positive number" << endl;
+      return false;
+    }
+
+    ti->zoom_speed = zs;
+  }
+
+  if (!jo.contains("frame_count") ||
+      !jo.at("frame_count").is_number_integer()) {
+
+    cout << "No valid value for \"frame_count\"" << endl;
+    return false;
+  }
+
+  {
+    const int fc = jo.at("frame_count");
+    if (fc <= 0) {
+      cout << "Error : frame_count = " << fc
+           << ", but expected a positive integer" << endl;
+      return false;
+    }
+
+    ti->frame_count = fc;
+  }
+
+  if (!jo.contains("cpu_threads") ||
+      !jo.at("cpu_threads").is_number_integer()) {
+
+    cout << "No valid value for \"cpu_threads\"" << endl;
+    return false;
+  }
+  {
+    const int ct = jo.at("cpu_threads");
+    if (ct <= 0 || ct >= 32768) {
+      cout << "Error : cpu_threads = " << ct
+           << ", but expected a positive integer no greater than 32767" << endl;
+      return false;
+    }
+
+    ti->cpu_threads = ct;
+  }
+
+  if (!jo.contains("gpu_threads") ||
+      !jo.at("gpu_threads").is_number_integer()) {
+
+    cout << "No valid value for \"gpu_threads\"" << endl;
+    return false;
+  }
+  {
+    const int gt = jo.at("gpu_threads");
+    if (gt < 0 || gt >= 32768) {
+      cout << "Error : gpu_threads = " << gt
+           << ", but expected a non negative integer no greater than 32767"
+           << endl;
+      return false;
+    }
+
+    ti->gpu_threads = gt;
+  }
+
+  if (!jo.contains("center_source") || !jo.at("center_source").is_string()) {
+    cout << "No valid value for \"center_source\"" << endl;
+    return false;
+  }
+  {
+    std::string cs = jo.at("center_source");
+    if (!std::filesystem::is_regular_file(cs)) {
+      cout << "Error : center_source = " << cs
+           << ", which is not an regular file" << endl;
+      return false;
+    }
+
+    ti->center_source = std::move(cs);
+  }
+
+  if (!jo.contains("tbf_file_prefix") ||
+      !jo.at("tbf_file_prefix").is_string()) {
+    cout << "No valid value for \"tbf_file_prefix\"" << endl;
+    return false;
+  }
+
+  ti->tbf_file_prefix = jo.at("tbf_file_prefix");
+
   return true;
 }

@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 
-
 struct task_input {
   double zoom_speed;
   int frame_count;
@@ -19,4 +18,6 @@ struct task_input {
 
 bool save_task_to_json(const task_input &ti,
                        std::string_view filename) noexcept;
+
+bool load_task_from_json(task_input *ti, std::string_view filename) noexcept;
 #endif // THREEBODYFRACTAL3_TBF_TASK_H
