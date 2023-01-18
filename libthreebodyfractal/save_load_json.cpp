@@ -58,6 +58,59 @@ bool libthreebody::save_fractal_basical_information_json(
   return true;
 }
 
+bool libthreebody::load_fractal_basical_information_nbt(
+    std::string_view filename, size_t *const rows_dest, size_t *const cols_dest,
+    input_t *const center_input_dest,
+    fractal_utils::center_wind<double> *const wind_dest,
+    compute_options *const opt_dest) noexcept {
+  const std::filesystem::path src_path(filename);
+  if (src_path.extension() != ".nbt") {
+    printf("\nError : invalid extension.\n");
+    return false;
+  }
+
+  const size_t filesize = std::filesystem::file_size(src_path);
+
+  FILE *const fp = fopen(filename.data(), "rb");
+
+  if (fp == nullptr) {
+    printf("\nError : Failed to open %s.\n", filename.data());
+    return false;
+  }
+
+  fractal_utils::data_block blk;
+  blk.data = malloc(filesize);
+  blk.tag = libthreebody::fractal_binfile_tag::basical_information;
+  blk.bytes = fread(blk.data, 1, filesize, fp);
+
+  if (blk.bytes != filesize) {
+
+    printf("\nError : Failed to read %s, filesize is %zu but actually read %zu "
+           "bytes.\n",
+           filename.data(), filesize, blk.bytes);
+    fclose(fp);
+    free(blk.data);
+    return false;
+  }
+
+  fractal_utils::binfile file;
+  file.blocks.emplace_back(blk);
+
+  if (!fractal_bin_file_get_information(
+          file, rows_dest, cols_dest, center_input_dest, wind_dest, opt_dest)) {
+    file.blocks.clear();
+    fclose(fp);
+    free(blk.data);
+    return false;
+  }
+
+  file.blocks.clear();
+  free(blk.data);
+  fclose(fp);
+
+  return true;
+}
+
 bool libthreebody::load_fractal_basical_information_json(
     std::string_view filename, size_t *const rows_dest, size_t *const cols_dest,
     input_t *const center_input_dest,

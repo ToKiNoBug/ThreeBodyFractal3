@@ -55,6 +55,13 @@ bool load_fractal_basical_information_json(
     fractal_utils::center_wind<double> *const wind_dest = nullptr,
     compute_options *const opt_dest = nullptr) noexcept;
 
+bool load_fractal_basical_information_nbt(
+    std::string_view filename, size_t *const rows_dest = nullptr,
+    size_t *const cols_dest = nullptr,
+    input_t *const center_input_dest = nullptr,
+    fractal_utils::center_wind<double> *const wind_dest = nullptr,
+    compute_options *const opt_dest = nullptr) noexcept;
+
 bool save_fractal_bin_file(std::string_view filename,
                            const input_t &center_input,
                            const fractal_utils::center_wind<double> &wind,

@@ -3,7 +3,8 @@
 #include <libthreebodyfractal.h>
 
 bool execute(std::string_view src, std::string_view dst, size_t __rows,
-             size_t __cols) noexcept;
+             size_t __cols,
+             const fractal_utils::center_wind<double> &__wind) noexcept;
 
 int main(int argc, char **argv) {
 
@@ -11,6 +12,7 @@ int main(int argc, char **argv) {
 
   std::string source_file;
   std::string dest_file;
+  fractal_utils::center_wind<double> __wind;
 
   size_t rows, cols;
   app.add_option("source file", source_file, "Source file")
@@ -22,9 +24,19 @@ int main(int argc, char **argv) {
   app.add_option("--rows", rows, "Rows for .paraD3B3 file.")->default_val(0);
   app.add_option("--cols", cols, "Cols for .paraD3B3 file.")->default_val(0);
 
+  app.add_option("--center-x", __wind.center[0], "X position of center")
+      ->default_val(std::nan(nullptr));
+  app.add_option("--center-y", __wind.center[1], "Y position of center")
+      ->default_val(std::nan(nullptr));
+
+  app.add_option("--span-x", __wind.x_span, "X range of window")
+      ->default_val(std::nan(nullptr));
+  app.add_option("--span-y", __wind.y_span, "Y range of window")
+      ->default_val(std::nan(nullptr));
+
   CLI11_PARSE(app, argc, argv);
 
-  if (!execute(source_file, dest_file, rows, cols)) {
+  if (!execute(source_file, dest_file, rows, cols, __wind)) {
     std::cout << "Failed." << std::endl;
     return 1;
   }
@@ -35,7 +47,8 @@ int main(int argc, char **argv) {
 }
 
 bool execute(std::string_view src, std::string_view dst, size_t __rows,
-             size_t __cols) noexcept {
+             size_t __cols,
+             const fractal_utils::center_wind<double> &__wind) noexcept {
   const std::filesystem::path src_path = src.data(), dst_path = dst.data();
 
   bool is_src_parsed = false;
@@ -66,44 +79,13 @@ bool execute(std::string_view src, std::string_view dst, size_t __rows,
     is_src_parsed = true;
   }
 
-  if (src_path.extension() == ".tbf" || src_path.extension() == ".nbt") {
+  if (src_path.extension() == ".tbf") {
+
     fractal_utils::binfile file;
-
-    std::vector<uint8_t> buffer;
-    if (src_path.extension() == ".tbf") {
-      if (!file.parse_from_file(src.data())) {
-        std::cout << "Failed to parse " << src << std::endl;
-        return false;
-      }
-    } else {
-      const size_t filesize = std::filesystem::file_size(src_path);
-      buffer.reserve(filesize);
-
-      std::ifstream ifs(src.data(), std::ios::binary | std::ios::in);
-      if (!ifs.is_open()) {
-        std::cout << "Failed to open " << src << std::endl;
-        return false;
-      }
-
-      ifs.read((char *)buffer.data(), filesize);
-      const size_t read_bytes = ifs.gcount();
-
-      if (read_bytes != filesize) {
-        std::cout << "Failed to read " << src << " : read " << read_bytes
-                  << " bytes but the file size is " << filesize << " bytes."
-                  << std::endl;
-        return false;
-      }
-
-      fractal_utils::data_block blk;
-      blk.tag = libthreebody::fractal_binfile_tag::basical_information;
-      blk.data = buffer.data();
-      blk.bytes = filesize;
-
-      file.blocks.emplace_back(blk);
+    if (!file.parse_from_file(src.data())) {
+      std::cout << "Failed to parse " << src << std::endl;
+      return false;
     }
-
-    // here binfile is ready.
 
     if (!libthreebody::fractal_bin_file_get_information(
             file, &rows, &cols, &center_input, &wind, &opt)) {
@@ -111,7 +93,15 @@ bool execute(std::string_view src, std::string_view dst, size_t __rows,
       return false;
     }
 
-    // buffer deconstruct here
+    is_src_parsed = true;
+  }
+
+  if (src_path.extension() == ".nbt") {
+    if (!libthreebody::load_fractal_basical_information_nbt(
+            src, &rows, &cols, &center_input, &wind, &opt)) {
+      std::cout << "Failed to parse " << src << std ::endl;
+      return false;
+    }
     is_src_parsed = true;
   }
 
@@ -124,6 +114,21 @@ bool execute(std::string_view src, std::string_view dst, size_t __rows,
 
     rows = __rows;
     cols = __cols;
+
+    if (std::isnan(__wind.center[0]) || std::isnan(__wind.center[1])) {
+
+      std::cout << "Invalid center : [" << __wind.center[0] << ", "
+                << __wind.center[1] << "]" << std::endl;
+      return false;
+    }
+    if (std::isnan(__wind.x_span) || std::isnan(__wind.y_span)) {
+
+      std::cout << "Invalid span : x_span = " << __wind.x_span
+                << ", y_span = " << __wind.y_span << std::endl;
+      return false;
+    }
+
+    wind = __wind;
 
     if (!libthreebody::load_parameters_from_D3B3(
             src, &center_input.mass, &center_input.beg_state, &opt)) {
