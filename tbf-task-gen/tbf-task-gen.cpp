@@ -1,27 +1,43 @@
 #include <CLI11.hpp>
-#include <nlohmann/json.hpp>
 #include <string>
 
-struct task_input {
-  size_t rows;
-  size_t cols;
-
-  double y_span;
-
-  std::string center_hex;
-};
+#include "tbf-task.h"
 
 int main(int argc, char **argv) {
   CLI::App app;
   task_input ti;
-  app.add_option("--rows", ti.rows, "Fractal rows.")
-      ->default_val(320)
+
+  std::string json_file;
+
+  app.add_option("--center-source", ti.center_source,
+                 "A .nbt or .tbf file that")
+      ->required()
+      ->check(CLI::ExistingFile);
+  app.add_option("--zoom-speed", ti.zoom_speed)
+      ->default_val(2.0)
       ->check(CLI::PositiveNumber);
-  app.add_option("--cols", ti.cols, "Fractal cols.")
-      ->default_val(320)
+  app.add_option("--frame-count", ti.frame_count)
+      ->check(CLI::PositiveNumber)
+      ->required();
+  app.add_option("-o", json_file, "Generated task file.")
+      ->default_val("task.json");
+  app.add_option("--tbf-prefix", ti.tbf_file_prefix,
+                 "Filename prefix of all tbf files")
+      ->default_val("");
+  app.add_option("--cpu-threads", ti.cpu_threads)
+      ->default_val(std::thread::hardware_concurrency())
       ->check(CLI::PositiveNumber);
+  app.add_option("--gpu-threads", ti.gpu_threads)
+      ->default_val(0)
+      ->check(CLI::NonNegativeNumber);
 
   CLI11_PARSE(app, argc, argv);
+
+  if (!save_task_to_json(ti, json_file)) {
+    return 1;
+  }
+
+  std::cout << "Task generated." << std::endl;
 
   return 0;
 }
