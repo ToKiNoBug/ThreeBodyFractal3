@@ -7,6 +7,31 @@
 
 using std::cout, std::endl;
 
+std::string task_input::tbf_filename(int frameidx) const noexcept {
+  std::string name;
+  name.reserve(this->tbf_file_prefix.size() + 32);
+
+  name = this->tbf_file_prefix;
+  name.append("frame");
+
+  const int total_digits =
+      std::ceil(std::log(this->frame_count + 0.1f) / std::log(10.0f));
+  char *const dest = name.data() + name.size();
+  name.append(total_digits, '\0');
+
+  const int ret = snprintf(dest, name.capacity() - name.size(), "%0*d",
+                           total_digits, frameidx);
+
+  if (ret <= 0) {
+    cout << "snprintf failed with code " << ret << endl;
+    return {};
+  }
+
+  name.append(".tbf");
+
+  return name;
+}
+
 bool save_task_to_json(const task_input &ti,
                        std::string_view filename) noexcept {
 

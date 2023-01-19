@@ -14,6 +14,8 @@ struct task_input {
 
   std::string center_source;
   std::string tbf_file_prefix;
+
+  std::string tbf_filename(int frameidx) const noexcept;
 };
 
 bool save_task_to_json(const task_input &ti,
