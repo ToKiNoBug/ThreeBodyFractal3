@@ -21,6 +21,11 @@ int main(int argc, char **argv) {
       ->required();
 
   app.add_option("--fps", ti.fps)->check(CLI::PositiveNumber)->default_val(60);
+
+  app.add_option("--extra-fps", ti.extra_fps)
+      ->default_val(0)
+      ->check(CLI::NonNegativeNumber);
+
   app.add_option("-o", json_file, "Generated task file.")
       ->default_val("task.json");
   app.add_option("--tbf-prefix", ti.tbf_file_prefix,

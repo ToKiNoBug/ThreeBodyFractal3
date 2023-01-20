@@ -55,7 +55,7 @@ std::string task_input::png_filename(int frameidx, int fpsidx) const noexcept {
   }
   name.push_back('-');
   const int total_digits_png =
-      std::ceil(std::log(this->fps + 0.1f) / std::log(10.0f));
+      std::ceil(std::log(this->fps + this->extra_fps + 0.1f) / std::log(10.0f));
 
   {
     char *const dest = name.data() + name.size();
@@ -83,6 +83,7 @@ bool save_task_to_json(const task_input &ti,
   jo["zoom_speed"] = ti.zoom_speed;
   jo["frame_count"] = ti.frame_count;
   jo["fps"] = ti.fps;
+  jo["extra_fps"] = ti.extra_fps;
 
   jo["cpu_threads"] = ti.cpu_threads;
   jo["gpu_threads"] = ti.gpu_threads;
@@ -161,6 +162,16 @@ bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
     cout << "No valid value for \"frame_count\"" << endl;
     return false;
   }
+  {
+    const int fc = jo.at("frame_count");
+    if (fc <= 0) {
+      cout << "Error : frame_count = " << fc
+           << ", but expected a positive integer" << endl;
+      return false;
+    }
+
+    ti->frame_count = fc;
+  }
 
   if (!jo.contains("fps") || !jo.at("fps").is_number_integer()) {
     cout << "No valid value for \"fps\"" << endl;
@@ -175,16 +186,18 @@ bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
     }
     ti->fps = fps;
   }
-
+  if (!jo.contains("extra_fps") || !jo.at("extra_fps").is_number_integer()) {
+    cout << "No valid value for \"extra_fps\"" << endl;
+    return false;
+  }
   {
-    const int fc = jo.at("frame_count");
-    if (fc <= 0) {
-      cout << "Error : frame_count = " << fc
-           << ", but expected a positive integer" << endl;
+    const int efps = jo.at("extra_fps");
+    if (efps < 0) {
+      cout << "Error : extra_fps = " << efps
+           << ", but expected a non negative integer" << endl;
       return false;
     }
-
-    ti->frame_count = fc;
+    ti->extra_fps = efps;
   }
 
   if (!jo.contains("cpu_threads") ||

@@ -10,6 +10,7 @@ struct task_input {
   double zoom_speed;
   int frame_count;
   int fps;
+  int extra_fps;
   int16_t cpu_threads;
   int16_t gpu_threads;
   bool verbose;
