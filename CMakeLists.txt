@@ -42,5 +42,6 @@ add_subdirectory(tbfsingle)
 add_subdirectory(tbfcvt)
 add_subdirectory(tbf-task-gen)
 add_subdirectory(tbf-task-run)
+add_subdirectory(tbf-render)
 
 # add_subdirectory(old)

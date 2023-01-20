@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
   app.add_option("--frame-count", ti.frame_count)
       ->check(CLI::PositiveNumber)
       ->required();
+
+  app.add_option("--fps", ti.fps)->check(CLI::PositiveNumber)->default_val(60);
   app.add_option("-o", json_file, "Generated task file.")
       ->default_val("task.json");
   app.add_option("--tbf-prefix", ti.tbf_file_prefix,
@@ -49,6 +51,20 @@ int main(int argc, char **argv) {
   }
 
   if (!save_task_to_json(ti, json_file)) {
+    return 1;
+  }
+
+  if (!create_directories_by_filename(ti.tbf_filename(0))) {
+    std::cout << "Failed to create the parent directory for tbf files"
+              << std::endl;
+    return 1;
+  }
+
+  // std::cout << ti.png_filename(0, 0) << std::endl;
+
+  if (!create_directories_by_filename(ti.png_filename(0, 0))) {
+    std::cout << "Failed to create the parent directory for png files"
+              << std::endl;
     return 1;
   }
 

@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
               file, &rows, &cols, &center_input, &original_wind, &opt)) {
         cout << "Failed to parse " << task.center_source << endl;
         return 1;
-      };
+      }
 
       parsed = true;
     }

@@ -694,3 +694,41 @@ bool libthreebody::fractal_bin_file_get_result(
 
   return true;
 }
+
+#include <filesystem>
+
+bool libthreebody::load_fractal_basical_information_binary(
+    std::string_view filename, size_t *const rows_dest, size_t *const cols_dest,
+    input_t *const center_input_dest,
+    fractal_utils::center_wind<double> *const wind_dest,
+    compute_options *const opt_dest) noexcept {
+  const std::filesystem::path p(filename);
+
+  if (p.extension() == ".tbf") {
+    fractal_utils::binfile file;
+    if (!file.parse_from_file(filename.data()) ||
+        !libthreebody::fractal_bin_file_get_information(
+            file, rows_dest, cols_dest, center_input_dest, wind_dest,
+            opt_dest)) {
+      printf("\nError : Failed to parse %s\n", filename.data());
+      // cout << "Failed to parse " << task.center_source << endl;
+      return 1;
+    }
+
+    return true;
+  }
+
+  if (p.extension() == ".nbt") {
+    if (!libthreebody::load_fractal_basical_information_nbt(
+            filename, rows_dest, cols_dest, center_input_dest, wind_dest,
+            opt_dest)) {
+
+      printf("\nError : Failed to parse %s\n", filename.data());
+      return 1;
+    }
+    return true;
+  }
+
+  printf("Unsupported extension for center source %s.", filename.data());
+  return false;
+}

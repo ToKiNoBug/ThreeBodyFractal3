@@ -32,24 +32,40 @@ std::string task_input::tbf_filename(int frameidx) const noexcept {
   return name;
 }
 
-std::string task_input::png_filename(int frameidx) const noexcept {
+std::string task_input::png_filename(int frameidx, int fpsidx) const noexcept {
   std::string name;
   name.reserve(this->png_file_prefix.size() + 32);
 
   name = this->png_file_prefix;
   name.append("frame");
 
-  const int total_digits =
+  const int total_digits_tbf =
       std::ceil(std::log(this->frame_count + 0.1f) / std::log(10.0f));
-  char *const dest = name.data() + name.size();
-  name.append(total_digits, '\0');
+  {
+    char *const dest = name.data() + name.size();
+    name.append(total_digits_tbf, '\0');
 
-  const int ret = snprintf(dest, name.capacity() - name.size(), "%0*d",
-                           total_digits, frameidx);
+    const int ret = snprintf(dest, name.capacity() - name.size(), "%0*d",
+                             total_digits_tbf, frameidx);
 
-  if (ret <= 0) {
-    cout << "snprintf failed with code " << ret << endl;
-    return {};
+    if (ret <= 0) {
+      cout << "snprintf failed with code " << ret << endl;
+      return {};
+    }
+  }
+  name.push_back('-');
+  const int total_digits_png =
+      std::ceil(std::log(this->fps + 0.1f) / std::log(10.0f));
+
+  {
+    char *const dest = name.data() + name.size();
+    name.append(total_digits_png, '\0');
+    const int ret = snprintf(dest, name.capacity() - name.size(), "%0*d",
+                             total_digits_png, fpsidx);
+    if (ret <= 0) {
+      cout << "snprintf failed with code " << ret << endl;
+      return {};
+    }
   }
 
   name.append(".png");
@@ -66,6 +82,7 @@ bool save_task_to_json(const task_input &ti,
 
   jo["zoom_speed"] = ti.zoom_speed;
   jo["frame_count"] = ti.frame_count;
+  jo["fps"] = ti.fps;
 
   jo["cpu_threads"] = ti.cpu_threads;
   jo["gpu_threads"] = ti.gpu_threads;
@@ -143,6 +160,20 @@ bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
 
     cout << "No valid value for \"frame_count\"" << endl;
     return false;
+  }
+
+  if (!jo.contains("fps") || !jo.at("fps").is_number_integer()) {
+    cout << "No valid value for \"fps\"" << endl;
+    return false;
+  }
+  {
+    const int fps = jo.at("fps");
+    if (fps <= 0) {
+      cout << "Error : fps = " << fps << ", but expected a positive integer"
+           << endl;
+      return false;
+    }
+    ti->fps = fps;
   }
 
   {
@@ -243,5 +274,27 @@ bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
 
   ti->verbose = jo.at("verbose");
 
+  return true;
+}
+
+bool create_directories_by_filename(std::string_view __filename) noexcept {
+  std::filesystem::path filename(__filename);
+
+  std::filesystem::path dirname = filename.parent_path();
+
+  if (std::filesystem::is_directory(dirname)) {
+    // cout << "Parent directory " << dirname.string() << " already exists." <<
+    // endl;
+    return true;
+  }
+
+  std::error_code ec;
+  if (!std::filesystem::create_directories(dirname, ec)) {
+    cout << "Failed to create directory " << dirname.string()
+         << " with error code " << ec << endl;
+    return false;
+  }
+
+  // cout << "Parent directory " << dirname.string() << " created." << endl;
   return true;
 }

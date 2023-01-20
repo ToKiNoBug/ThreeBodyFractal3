@@ -9,6 +9,7 @@
 struct task_input {
   double zoom_speed;
   int frame_count;
+  int fps;
   int16_t cpu_threads;
   int16_t gpu_threads;
   bool verbose;
@@ -21,11 +22,14 @@ struct task_input {
 
   std::string tbf_filename(int frameidx) const noexcept;
 
-  std::string png_filename(int frameidx) const noexcept;
+  std::string png_filename(int frameidx, int fps_idx) const noexcept;
 };
 
 bool save_task_to_json(const task_input &ti,
                        std::string_view filename) noexcept;
 
 bool load_task_from_json(task_input *ti, std::string_view filename) noexcept;
+
+bool create_directories_by_filename(std::string_view filename) noexcept;
+
 #endif // THREEBODYFRACTAL3_TBF_TASK_H
