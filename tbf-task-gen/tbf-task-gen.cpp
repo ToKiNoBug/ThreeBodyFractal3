@@ -24,6 +24,9 @@ int main(int argc, char **argv) {
   app.add_option("--tbf-prefix", ti.tbf_file_prefix,
                  "Filename prefix of all tbf files")
       ->default_val("");
+  app.add_option("--png-prefix", ti.png_file_prefix,
+                 "Filename prefix of all png files")
+      ->default_val("");
   app.add_option("--cpu-threads", ti.cpu_threads)
       ->default_val(std::thread::hardware_concurrency())
       ->check(CLI::PositiveNumber);
@@ -31,7 +34,19 @@ int main(int argc, char **argv) {
       ->default_val(0)
       ->check(CLI::NonNegativeNumber);
 
+  CLI::Option *const opt_render =
+      app.add_option("--render-json", ti.render_json,
+                     "Json used to guide rendering.")
+          ->check(CLI::ExistingFile);
+
+  app.add_flag("--verbose", ti.verbose,
+               "Display the progress of each computation.");
+
   CLI11_PARSE(app, argc, argv);
+
+  if (opt_render->empty()) {
+    ti.render_json = "default";
+  }
 
   if (!save_task_to_json(ti, json_file)) {
     return 1;

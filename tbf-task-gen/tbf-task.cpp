@@ -32,6 +32,31 @@ std::string task_input::tbf_filename(int frameidx) const noexcept {
   return name;
 }
 
+std::string task_input::png_filename(int frameidx) const noexcept {
+  std::string name;
+  name.reserve(this->png_file_prefix.size() + 32);
+
+  name = this->png_file_prefix;
+  name.append("frame");
+
+  const int total_digits =
+      std::ceil(std::log(this->frame_count + 0.1f) / std::log(10.0f));
+  char *const dest = name.data() + name.size();
+  name.append(total_digits, '\0');
+
+  const int ret = snprintf(dest, name.capacity() - name.size(), "%0*d",
+                           total_digits, frameidx);
+
+  if (ret <= 0) {
+    cout << "snprintf failed with code " << ret << endl;
+    return {};
+  }
+
+  name.append(".png");
+
+  return name;
+}
+
 bool save_task_to_json(const task_input &ti,
                        std::string_view filename) noexcept {
 
@@ -45,7 +70,13 @@ bool save_task_to_json(const task_input &ti,
   jo["cpu_threads"] = ti.cpu_threads;
   jo["gpu_threads"] = ti.gpu_threads;
   jo["tbf_file_prefix"] = ti.tbf_file_prefix;
+  jo["png_file_prefix"] = ti.png_file_prefix;
   jo["center_source"] = ti.center_source;
+
+  jo["render_json"] = ti.render_json;
+
+  // jo["hide_output"] = ti.reduce_output;
+  jo["verbosee"] = ti.verbose;
 
   std::ofstream ofs(filename.data());
 
@@ -180,8 +211,37 @@ bool load_task_from_json(task_input *ti, std::string_view filename) noexcept {
     cout << "No valid value for \"tbf_file_prefix\"" << endl;
     return false;
   }
-
   ti->tbf_file_prefix = jo.at("tbf_file_prefix");
+
+  if (!jo.contains("png_file_prefix") ||
+      !jo.at("png_file_prefix").is_string()) {
+    cout << "No valid value for \"png_file_prefix\"" << endl;
+    return false;
+  }
+  ti->png_file_prefix = jo.at("png_file_prefix");
+
+  if (!jo.contains("render_json") || !jo.at("render_json").is_string()) {
+    cout << "No valid value for \"render_json\"" << endl;
+    return false;
+  }
+
+  {
+    std::string rj = jo.at("render_json");
+    if (rj != "default" && !std::filesystem::is_regular_file(rj)) {
+      cout << "Error : render_json = " << rj << ", which is not an regular file"
+           << endl;
+      return false;
+    }
+
+    ti->render_json = std::move(rj);
+  }
+
+  if (!jo.contains("verbose") || !jo.at("verbose").is_boolean()) {
+    cout << "No valid value for \"verbose\"" << endl;
+    return false;
+  }
+
+  ti->verbose = jo.at("verbose");
 
   return true;
 }

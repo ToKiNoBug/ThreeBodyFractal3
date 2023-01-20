@@ -15,9 +15,17 @@ using std::cout, std::endl;
 int main(int argc, char **argv) {
   CLI::App app;
   std::string taskfile;
+
+  int max_frames_this_run;
+
   app.add_option("taskfile", taskfile, "Json task file to run.")
       ->default_val("task.json")
       ->check(CLI::ExistingFile);
+
+  app.add_option("--max-frames", max_frames_this_run,
+                 "Maximum frames to compute in this run")
+      ->default_val(INT32_MAX)
+      ->check(CLI::PositiveNumber);
 
   CLI11_PARSE(app, argc, argv);
 
@@ -78,6 +86,13 @@ int main(int argc, char **argv) {
       unfinished++;
   }
 
+  if (unfinished <= 0) {
+    cout << "All tasks finished." << endl;
+    return 0;
+  }
+
+  // max_frames_this_run = std::min(max_frames_this_run, unfinished);
+
   omp_set_num_threads(task.cpu_threads + task.gpu_threads);
 
   int task_counter = 0;
@@ -98,6 +113,15 @@ int main(int argc, char **argv) {
     if (std::filesystem::exists(filename)) {
       break;
     }
+
+    if (task_counter >= max_frames_this_run) {
+      cout << task_counter
+           << " task(s) is finished, which meets the requirements of "
+              "--max-frames, exit."
+           << endl;
+      return 0;
+    }
+
     task_counter++;
     cout << "\r[ " << task_counter << " / " << unfinished << " : "
          << float(task_counter * 100) / unfinished << "% ] : " << filename
@@ -107,8 +131,8 @@ int main(int argc, char **argv) {
     wind.x_span /= std::pow(task.zoom_speed, frameidx);
     wind.y_span /= std::pow(task.zoom_speed, frameidx);
 
-    libthreebody::compute_frame_cpu_and_gpu(center_input, wind, opt,
-                                            &map_result, &gpu_alloc);
+    libthreebody::compute_frame_cpu_and_gpu(
+        center_input, wind, opt, &map_result, &gpu_alloc, task.verbose);
     cout << "Computation finished. Exporting...";
     if (!libthreebody::save_fractal_bin_file(filename, center_input, wind, opt,
                                              map_result, buffer, buffer_cap)) {
@@ -124,5 +148,6 @@ int main(int argc, char **argv) {
 
   free(buffer);
 
+  cout << "All tasks finished." << endl;
   return 0;
 }

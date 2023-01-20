@@ -11,11 +11,17 @@ struct task_input {
   int frame_count;
   int16_t cpu_threads;
   int16_t gpu_threads;
+  bool verbose;
 
   std::string center_source;
   std::string tbf_file_prefix;
+  std::string png_file_prefix;
+
+  std::string render_json;
 
   std::string tbf_filename(int frameidx) const noexcept;
+
+  std::string png_filename(int frameidx) const noexcept;
 };
 
 bool save_task_to_json(const task_input &ti,
