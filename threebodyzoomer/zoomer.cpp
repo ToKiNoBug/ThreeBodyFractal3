@@ -44,7 +44,7 @@ int main(int argc, char **argV) {
   using namespace fractal_utils;
   using namespace libthreebody;
 
-  mainwindow w(double(1), nullptr, map_size, sizeof(result_t), 4);
+  mainwindow w(double(1), nullptr, map_size, sizeof(result_t), 1);
 
   {
     center_wind<double> wind;
@@ -54,10 +54,10 @@ int main(int argc, char **argV) {
     w.set_window(wind);
   }
 
-  custom_parameters custp{gpu_mem_allocator(2, cols), input_t(),
+  custom_parameters custp{gpu_mem_allocator(1, cols), input_t(),
                           compute_options(), nullptr};
 
-  printf("cutp.alloc.size() = %i\n", custp.alloc.size());
+  printf("custp.alloc.size() = %i\n", custp.alloc.size());
 
   custp.buffer_export = fractal_utils::allocate_memory_aligned(
       32, sizeof(result_t) * rows * cols * 2.5);

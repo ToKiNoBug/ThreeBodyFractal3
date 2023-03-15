@@ -94,7 +94,7 @@ bool save_task_to_json(const task_input &ti,
   jo["render_json"] = ti.render_json;
 
   // jo["hide_output"] = ti.reduce_output;
-  jo["verbosee"] = ti.verbose;
+  jo["verbose"] = ti.verbose;
 
   std::ofstream ofs(filename.data());
 
