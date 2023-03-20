@@ -62,7 +62,7 @@ int main(int argc, char **argV) {
   custp.buffer_export = fractal_utils::allocate_memory_aligned(
       32, sizeof(result_t) * rows * cols * 2.5);
 
-  omp_set_num_teams(std::thread::hardware_concurrency() + custp.alloc.size());
+  omp_set_num_threads(std::thread::hardware_concurrency() + custp.alloc.size());
 
   custp.center_input = get_center_input(argc, argV);
 
